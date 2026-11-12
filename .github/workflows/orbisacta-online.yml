@@ -1,0 +1,73 @@
+name: OrbisActa online hírfeldolgozás és publikálás
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # UTC idő; Magyarországon télen +1, nyáron +2 óra.
+    - cron: '17 0,6,12,18 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orbisacta-pages
+  cancel-in-progress: false
+
+jobs:
+  news:
+    name: Gyűjtés, AI, ellenőrzés és weboldalcsomag
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - name: Python függőségek
+        run: python -m pip install -r requirements.txt
+      - name: Tesztfuttató telepítése
+        run: python -m pip install "pytest>=8,<10"
+      - name: Kódtesztek (nincs API-díj)
+        run: python -m pytest -q tests/
+      - name: Adatbázis visszatöltése a korábbi futásból
+        uses: actions/cache@v4
+        with:
+          path: data/orbisacta.sqlite3
+          key: orbisacta-sqlite-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            orbisacta-sqlite-
+      - name: Hírek gyűjtése és feldolgozása
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-4o-mini' }}
+        run: python orbisacta.py run --limit-per-feed 6 --max-ai 10
+      - name: Nem publikus adatfájlok ellenőrzése
+        run: |
+          test -f docs/index.html
+          test -f docs/news.json
+          test -f docs/site-status.json
+          test ! -e docs/internal-preview.json
+      - name: GitHub Pages előkészítés
+        uses: actions/configure-pages@v5
+      - name: Publikálandó oldal feltöltése
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs
+
+  publish:
+    name: Nyilvános weboldal frissítése
+    needs: news
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Publikálás GitHub Pagesre
+        id: deployment
+        uses: actions/deploy-pages@v4
