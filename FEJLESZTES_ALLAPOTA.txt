@@ -1,0 +1,6 @@
+OrbisActa v0.3 online publikálásra előkészítve (GitHub Pages + Actions).
+11 helyi pytest teszt sikeres.
+Külön GitHub Actions workflow fájl kész.
+Valódi internetes RSS és OpenAI API integráció még nem tesztelt.
+Nincs létrehozott, ellenőrzött élő nyilvános webcím.
+Az API-kulcsot GitHub Actions secretként kell beállítani.

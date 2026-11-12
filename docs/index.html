@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>OrbisActa · Nemzetközi hírek</title>
+<style>
+:root {--navy:#0b1930;--teal:#007b79;--ink:#142235;--sub:#536575;--line:#d9e1e7;--surface:#f5f7f7}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:var(--ink);background:#fff}
+header{border-bottom:1px solid var(--line);padding:19px max(22px,calc((100vw - 1100px)/2));display:flex;align-items:center;justify-content:space-between;gap:15px}
+.logoimg{height:61px;width:auto;max-width:240px;object-fit:contain;display:block}
+header small{font-size:12px;color:var(--sub);text-align:right}
+main{max-width:1100px;padding:34px 22px 80px;margin:auto}.eyebrow{text-transform:uppercase;letter-spacing:.15em;color:var(--teal);font-size:11px;font-weight:760}
+h1{font-size:clamp(29px,4vw,47px);letter-spacing:-.045em;line-height:1.13;margin:10px 0 12px;max-width:740px}
+.lead{max-width:670px;color:var(--sub);font-size:16px;line-height:1.55;margin-bottom:25px}
+.filters{padding:22px;background:var(--surface);border-radius:14px;border:1px solid var(--line);display:grid;gap:16px}
+.group-label{font-size:12px;font-weight:750;margin-bottom:9px;color:var(--sub)}.chips{display:flex;flex-wrap:wrap;gap:8px}
+button.chip{background:white;color:var(--ink);border:1px solid #cad4dc;border-radius:30px;padding:9px 14px;cursor:pointer;font-size:13px}
+button.chip[aria-pressed=true]{background:var(--navy);color:white;border-color:var(--navy)}
+button.chip:focus-visible{outline:3px solid #69c9c2;outline-offset:2px}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:30px 0 16px;color:var(--sub);font-size:12px;flex-wrap:wrap}
+.count{font-weight:700;color:var(--ink)}.feed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+article{border:1px solid var(--line);padding:22px;border-radius:12px;display:flex;flex-direction:column;gap:12px;min-height:230px}
+.toprow{display:flex;justify-content:space-between;gap:12px;color:var(--teal);font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.06em}
+article h2{font-size:21px;letter-spacing:-.02em;line-height:1.22;margin:0}article p{font-size:14px;line-height:1.6;margin:0;color:#3a4b57}
+article a{color:var(--teal);font-weight:700;font-size:13px;margin-top:auto;text-decoration:none}article a:hover{text-decoration:underline}
+.empty{border:1px dashed #bac8d0;background:#f7faf9;padding:34px;border-radius:12px;color:#4b5d67;line-height:1.7;grid-column:1/-1}
+footer{max-width:1100px;margin:auto;padding:25px 22px 50px;color:var(--sub);font-size:12px;border-top:1px solid var(--line)}
+@media(max-width:680px){header{padding:15px 20px}.logoimg{height:45px;max-width:190px}header small{max-width:145px}.feed{grid-template-columns:1fr}main{padding:27px 18px 60px}.filters{padding:16px}}
+</style>
+</head>
+<body>
+<header><img class="logoimg" src="./assets/logo-orbisacta.png" alt="OrbisActa"/><small>Nemzetközi hírek · Szerkesztőségi próbarendszer</small></header>
+<main>
+  <div class="eyebrow">Világkép</div>
+  <h1>A világ hírei, több ország nézőpontjából.</h1>
+  <p class="lead">Válaszd ki az országokat és témákat. Az összefoglalókat csak a forrásanyag és a felhasználási jogok ellenőrzése után jelenítjük meg.</p>
+  <section class="filters" aria-label="Hírszűrők">
+    <div><div class="group-label">Országok (legfeljebb 10)</div><div class="chips" id="countries"></div></div>
+    <div><div class="group-label">Témakör</div><div class="chips" id="topics"></div></div>
+  </section>
+  <div class="meta"><div class="count" id="count">Hírek betöltése…</div><div id="updated"></div></div>
+  <section class="feed" id="feed" aria-live="polite"></section>
+</main>
+<footer>OrbisActa · Fejlesztői prototípus. A géppel készített összefoglalók nem helyettesítik az eredeti cikket vagy az emberi szerkesztői ellenőrzést. Az adatforrásokra külön felhasználási és hivatkozási feltételek vonatkoznak.</footer>
+<script>
+const names={HU:'Magyarország',DE:'Németország',US:'Egyesült Államok',GB:'Egyesült Királyság',EU:'Európai Unió',WORLD:'Világ'};
+const topics=['Összes','politika','gazdaság','tudomány','sport','kultúra','egyéb'];
+let articles=[],internalItems=[],selected=new Set(['HU','DE','US','GB','EU','WORLD']),topic='Összes';
+const feed=document.getElementById('feed');
+function btn(label,pressed,click){const b=document.createElement('button');b.className='chip';b.textContent=label;b.setAttribute('aria-pressed',String(pressed));b.onclick=click;return b}
+function renderControls(){const countryEl=document.getElementById('countries');countryEl.replaceChildren();Object.entries(names).forEach(([code,name])=>countryEl.append(btn(name,selected.has(code),()=>{if(selected.has(code))selected.delete(code);else if(selected.size<10)selected.add(code);renderControls();render()})));
+const topicEl=document.getElementById('topics');topicEl.replaceChildren();topics.forEach(t=>topicEl.append(btn(t==='Összes'?t:t.charAt(0).toUpperCase()+t.slice(1),topic===t,()=>{topic=t;renderControls();render()})))}
+function el(tag,text,klass){const n=document.createElement(tag);if(text)n.textContent=text;if(klass)n.className=klass;return n}
+function render(){const visible=articles.filter(a=>selected.has(a.country)&&(topic==='Összes'||a.topic===topic));document.getElementById('count').textContent=visible.length+' ellenőrzött hír';feed.replaceChildren();
+if(!visible.length){const box=el('div',null,'empty');box.append(el('strong','Még nincs publikálható összefoglaló.'));
+box.append(el('p','Még nem készült ellenőrzött AI-összefoglaló. Az RSS-gyűjtéshez internet, az AI feldolgozáshoz API-kulcs szükséges. A napló a data/last_run.json fájlban található.'));feed.append(box);renderInternal();return}
+for(const item of visible){const card=el('article');const top=el('div',null,'toprow');top.append(el('span',(names[item.country]||item.country)+' · '+item.topic));top.append(el('span',item.source_name||''));card.append(top);card.append(el('h2',item.title_hu));card.append(el('p',item.summary_hu));const credit=el('small',(item.author?item.author+' · ':'')+(item.source_name||'')+(item.license?' · '+item.license:'')+' · AI-val átdolgozott magyar összefoglaló');credit.style.cssText='color:#526575;line-height:1.55;font-size:12px';card.append(credit);const link=el('a','Eredeti hír és forrásmegjelölés');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';card.append(link);feed.append(card)}}
+function renderInternal(){const items=internalItems.filter(a=>selected.has(a.country)&&(topic==='Összes'||a.topic_hint===topic)).slice(0,24);if(!items.length)return;
+const label=el('div','BELSŐ RSS-TESZT: ÉLŐ FORRÁSOKBÓL GYŰJTÖTT, JOGILAG NEM PUBLIKÁLHATÓ CÍMSOROK','internal-label');label.style.cssText='grid-column:1/-1;color:#99601f;font-size:11px;font-weight:800;letter-spacing:.06em;margin-top:6px';feed.append(label);
+for(const item of items){const card=el('article');card.style.cssText='min-height:150px;background:#fffaf3;border-style:dashed';card.append(el('div',(names[item.country]||item.country)+' · '+item.source_name,'toprow'));card.append(el('h2',item.title_original));const link=el('a','Eredeti cikk (belső teszt)');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';card.append(link);feed.append(card)}
+}
+async function init(){renderControls();try{const res=await fetch('./news.json',{cache:'no-store'});if(!res.ok)throw new Error('missing news.json');const data=await res.json();articles=Array.isArray(data.articles)?data.articles:[];
+document.getElementById('updated').textContent='Frissítve: '+(data.generated_utc?new Date(data.generated_utc).toLocaleString('hu-HU'):'—')}catch(e){document.getElementById('updated').textContent='A híradat még nem készült el.'}try{const r=await fetch('./internal-preview.json',{cache:'no-store'});if(r.ok){const raw=await r.json();internalItems=raw.internal_only?raw.items:[]}}catch(e){}render()}init();
+</script>
+</body></html>

@@ -1,0 +1,23 @@
+{
+  "project": "OrbisActa",
+  "generated_utc": "2026-11-12T21:23:02+00:00",
+  "countries": {
+    "HU": "Magyarország",
+    "DE": "Németország",
+    "US": "Egyesült Államok",
+    "GB": "Egyesült Királyság",
+    "EU": "Európai Unió",
+    "WORLD": "Világ"
+  },
+  "topics": [
+    "politika",
+    "gazdaság",
+    "tudomány",
+    "sport",
+    "kultúra",
+    "egyéb"
+  ],
+  "articles": [],
+  "count": 0,
+  "notice": "AI-based Hungarian summaries, adapted from attributed source text. No original photos. Open original for context."
+}
