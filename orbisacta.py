@@ -296,6 +296,13 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
     if not approved:
         print("Nincs AI-feldolgozásra engedélyezett forrás; a hírek metaadatként várakoznak.")
         return {"processed": 0, "published": 0, "reason": "source_rights_not_approved"}
+    # Failed API quota/rate-limit attempts are temporary operational failures,
+    # not editorial rejections. Older pilot runs marked them needs_review.
+    con.execute("""UPDATE articles SET status='pending_ai', error='retry_after_api_limit'
+                   WHERE status='needs_review' AND
+                   (error LIKE 'RateLimitError:%' OR error LIKE 'AuthenticationError:%'
+                    OR error LIKE 'APITimeoutError:%' OR error LIKE 'APIConnectionError:%')""")
+    con.commit()
     # Do not spend API credits processing stale articles. Also reject feeds
     # without a trustworthy publication timestamp until reviewed.
     recent_cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat(timespec="seconds")
@@ -338,8 +345,17 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
                 (str(result.get("title_hu", ""))[:500], summary, topic, target_country,
                  min(100, max(0, int(result.get("importance", 0)))), status, err, now_utc(), row["id"]))
         except Exception as exc:
+            name = type(exc).__name__
+            if name in {"RateLimitError", "AuthenticationError", "APITimeoutError", "APIConnectionError"}:
+                # Stop on API service errors instead of spending the entire batch
+                # on repeated requests. Keep the article retriable.
+                con.execute("UPDATE articles SET status='pending_ai', error=?, processed_utc=? WHERE id=?",
+                            (f"{name}: api_unavailable", now_utc(), row["id"]))
+                con.commit()
+                print(f"AI-feldolgozás leállítva: {name}. API-kvóta, számlázás vagy kapcsolat ellenőrzendő.")
+                return {"processed": processed, "published": published, "reason": "api_unavailable"}
             con.execute("UPDATE articles SET status='needs_review', error=?, processed_utc=? WHERE id=?",
-                        (f"{type(exc).__name__}: {str(exc)[:220]}", now_utc(), row["id"]))
+                        (f"{name}: {str(exc)[:220]}", now_utc(), row["id"]))
         con.commit()
     return {"processed": processed, "published": published}
 
