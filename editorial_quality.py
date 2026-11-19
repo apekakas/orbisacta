@@ -14,8 +14,8 @@ STATISTIC_UNITS = re.compile(
     r"average|median|growth|rate|population|residents|people|"
     r"households|salary|salaries|income|revenue|gdp|inflation|"
     r"eur|usd|gbp|kilomet(?:er|re)s?|tonnes?|tons?|"
-    r"százalék|millió|milliárd|ezer|fő|foglalkoztat|munkanélkül|"
-    r"bér|lakos|jövedelem|árbevétel|növekedés)\b",
+    r"százalék\w*|millió\w*|milliárd\w*|ezer\w*|fő|foglalkoztat\w*|munkanélkül\w*|"
+    r"bér\w*|lakos\w*|jövedelem\w*|árbevétel\w*|növekedés\w*)\b",
     re.IGNORECASE,
 )
 DATE = re.compile(r"\b(?:19|20)\d{2}[-/]\d{1,2}[-/]\d{1,2}\b")

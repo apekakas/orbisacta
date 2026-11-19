@@ -813,3 +813,16 @@ def test_public_archive_and_metrics_exclude_future_dated_feed_entries(tmp_path):
     for lang in ("en","es","fr","de","pt"):
         assert json.loads((tmp_path/("news-"+lang+".json")).read_text())["count"]==0
     con.close()
+
+
+def test_hungarian_inflected_statistic_units_are_detected_correctly():
+    from editorial_quality import numeric_values
+    summary = (
+        "A munkanélküliségi mutató 4,6 százalékra változott, "
+        "a foglalkoztatási arány 72,1 százalékkal szerepel a jelentésben."
+    )
+    assert numeric_values(summary, require_unit=True) == {"4.6", "72.1"}
+    assert numeric_values("A jelentés 2025 és 2026 évét hasonlította össze.",
+                          require_unit=True) == set()
+    more = "Az éves bérnövekedés 3,2 százalékos, a foglalkoztatottság 73,4 százalékon állt."
+    assert numeric_values(more, require_unit=True) == {"3.2", "73.4"}
