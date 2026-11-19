@@ -792,3 +792,24 @@ def test_quality_dashboard_present_localized_and_lazy_loaded_all_pages():
     assert labels.count("qualityMethod:")==6
     assert labels.count("qualityNoCountry:")==6
     assert labels.count("qualityNoTopic:")==6
+
+
+def test_public_archive_and_metrics_exclude_future_dated_feed_entries(tmp_path):
+    from datetime import timedelta
+    con=oa.connect(tmp_path/"future.sqlite3")
+    tomorrow=(datetime.now(timezone.utc).date()+timedelta(days=1)).isoformat()+"T12:00:00+00:00"
+    oa.insert_entries(con,SRC,[{
+        "url":"https://example.org/future-story","title":"A future-dated news item",
+        "published_utc":tomorrow,"excerpt":"Future"
+    }])
+    con.execute("""UPDATE articles SET status='published', topic='tudomány',
+        title_hu='A nem megbízható jövőbeli hírdátum',
+        summary_hu='Öt ellenőrzött, de hibásan jövőre dátumozott megállapítás.'""")
+    con.commit()
+    out=tmp_path/"news.json"
+    assert oa.export_json(con,out)==0
+    assert json.loads(out.read_text())["count"]==0
+    assert json.loads((tmp_path/"quality.json").read_text())["total"]["published"]==0
+    for lang in ("en","es","fr","de","pt"):
+        assert json.loads((tmp_path/("news-"+lang+".json")).read_text())["count"]==0
+    con.close()

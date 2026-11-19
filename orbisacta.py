@@ -473,10 +473,12 @@ def export_json(con, destination: Path = PUBLISH_PATH):
     """
     archive = archive_window()
     cutoff = archive["cutoff_utc"]
+    tomorrow = (datetime.fromisoformat(archive["end_date"]).date()
+                + timedelta(days=1)).isoformat() + "T00:00:00+00:00"
     rows = con.execute("""SELECT id, country, topic, source_name, author, license, license_url,
           rights_reference_url, title_hu, url, published_utc, summary_hu, context_hu AS context_text, importance FROM articles WHERE status='published'
-          AND published_utc >= ?
-          ORDER BY importance DESC, published_utc DESC LIMIT 400""", (cutoff,)).fetchall()
+          AND published_utc >= ? AND published_utc < ?
+          ORDER BY importance DESC, published_utc DESC LIMIT 400""", (cutoff, tomorrow)).fetchall()
     payload = {"project": "OrbisActa", "generated_utc": now_utc(),
                "archive": archive,
                "countries": COUNTRIES, "topics": list(TOPICS),

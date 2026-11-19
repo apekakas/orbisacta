@@ -150,6 +150,8 @@ def export_languages(con, base_payload, target_folder):
     """Publish only approved translated articles; no undisclosed HU fallback."""
     target_folder = Path(target_folder)
     cutoff = base_payload["archive"]["cutoff_utc"]
+    tomorrow = (datetime.fromisoformat(base_payload["archive"]["end_date"]).date()
+                + timedelta(days=1)).isoformat() + "T00:00:00+00:00"
     counts = {}
     for lang in TARGET_LANGUAGES:
         rows = con.execute("""SELECT a.id, a.country, a.topic, a.source_name,
@@ -158,8 +160,9 @@ def export_languages(con, base_payload, target_folder):
             t.summary AS summary_hu, t.context_text AS context_text, a.importance
             FROM articles a JOIN article_translations t ON a.id=t.article_id
             WHERE a.status='published' AND t.lang=? AND a.published_utc >= ?
+              AND a.published_utc < ?
             ORDER BY a.importance DESC, a.published_utc DESC LIMIT 400""",
-            (lang, cutoff)).fetchall()
+            (lang, cutoff, tomorrow)).fetchall()
         data = dict(base_payload)
         data["language"] = lang
         data["articles"] = [dict(r) for r in rows]
