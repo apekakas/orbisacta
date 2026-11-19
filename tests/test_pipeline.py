@@ -176,3 +176,53 @@ def test_new_country_sources_are_registered():
     ids = {s['country'] for s in sources}
     assert {'FR', 'IT', 'JP', 'BR'} <= ids
     assert all(s['ai_approved'] for s in sources if s['country'] in {'FR', 'IT', 'JP', 'BR'})
+
+
+def test_multilingual_translation_validate_and_export(tmp_path):
+    import international as il
+    db = oa.connect(tmp_path / 'multi.sqlite3')
+    oa.insert_entries(db, SRC, oa.parse_feed(RSS))
+    db.execute("""UPDATE articles SET status='published', title_hu='Magyar cím az olvasóknak',
+                 summary_hu='Egy. Kettő. Három. Négy. Öt.'""")
+    db.commit()
+    out = tmp_path / 'news.json'
+    assert oa.export_json(db, out) == 1
+    assert json.loads((tmp_path / 'news-en.json').read_text())['count'] == 0
+    translated = {lang: {'title': f'Proper translated headline for {lang}',
+                         'sentences': [f'The translated verified fact number {i} for {lang}.' for i in range(1,6)]}
+                  for lang in il.TARGET_LANGUAGES}
+    valid = il.validate_translations(translated)
+    news_id = db.execute("SELECT id FROM articles").fetchone()[0]
+    for lang, (title, summary) in valid.items():
+        db.execute("""INSERT INTO article_translations
+            (article_id, lang, title, summary, translated_utc)
+            VALUES (?, ?, ?, ?, ?)""", (news_id, lang, title, summary, oa.now_utc()))
+    db.commit()
+    assert oa.export_json(db, out) == 1
+    en = json.loads((tmp_path / 'news-en.json').read_text())
+    assert en['language'] == 'en' and en['count'] == 1
+    assert en['articles'][0]['url'] == 'https://example.org/a'
+    assert en['articles'][0]['title_hu'] == 'Proper translated headline for en'
+    assert json.loads(out.read_text())['articles'][0]['title_hu'] == 'Magyar cím az olvasóknak'
+    db.close()
+
+
+def test_translation_rejects_duplicated_or_missing_sentences():
+    import international as il
+    bad = {lang: {'title': 'Properly long news headline',
+                  'sentences': ['The repeated sentence has some meaningful length.'] * 5}
+           for lang in il.TARGET_LANGUAGES}
+    try:
+        il.validate_translations(bad)
+        assert False, 'Duplicates must be rejected'
+    except ValueError:
+        pass
+    assert tuple(il.LANGUAGES) == ('hu', 'en', 'es', 'fr', 'de', 'pt')
+
+
+def test_translation_cap_zero_does_not_use_api(tmp_path, monkeypatch):
+    import international as il
+    db = oa.connect(tmp_path / 'cap.sqlite3')
+    monkeypatch.setenv('OPENAI_API_KEY', 'offline-fake')
+    assert il.translate_pending(db, 0)['attempted'] == 0
+    db.close()
