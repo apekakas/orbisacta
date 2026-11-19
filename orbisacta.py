@@ -291,10 +291,11 @@ Importance reflects the newsworthiness for residents, not headline sensationalis
 
 
 def select_diverse_pending(rows, limit):
-    """Balance the AI budget across source-country buckets.
+    """Balance country buckets and recent source diversity without stale promotion.
 
-    The source bucket is provisional: a WORLD story may receive a country label
-    after AI classification. Within each bucket, the freshest story comes first.
+    Within each country, avoid repeating the last source only when a different
+    source has a comparably recent story (within 36 hours of the newest).
+    Source diversity is editorial variety, not a claimed popularity metric.
     """
     buckets = {}
     for row in rows:
@@ -304,19 +305,39 @@ def select_diverse_pending(rows, limit):
         key=lambda country: buckets[country][0]["published_utc"] or "",
         reverse=True,
     )
-    selected = []
+    selected, last_by_country = [], {}
+    def key(row):
+        return row["source_id"] if "source_id" in row.keys() else row["country"]
     while len(selected) < limit:
         advanced = False
         for country in order:
-            if buckets[country]:
-                selected.append(buckets[country].pop(0))
-                advanced = True
-                if len(selected) >= limit:
-                    break
+            pool = buckets[country]
+            if not pool:
+                continue
+            chosen = 0
+            last_source = last_by_country.get(country)
+            if last_source is not None:
+                newest = pool[0]["published_utc"] or ""
+                try:
+                    newest_time = datetime.fromisoformat(newest)
+                    for index, candidate in enumerate(pool[1:], 1):
+                        stamp = datetime.fromisoformat(candidate["published_utc"] or "")
+                        if newest_time - stamp > timedelta(hours=36):
+                            break
+                        if key(candidate) != last_source:
+                            chosen = index
+                            break
+                except ValueError:
+                    pass
+            row = pool.pop(chosen)
+            selected.append(row)
+            last_by_country[country] = key(row)
+            advanced = True
+            if len(selected) >= limit:
+                break
         if not advanced:
             break
     return selected
-
 
 def process(con, sources, max_items=12, model="gpt-4o-mini"):
     if not os.environ.get("OPENAI_API_KEY"):

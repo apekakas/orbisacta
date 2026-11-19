@@ -302,5 +302,53 @@
     "feed_status": "url_found",
     "author_required": false,
     "rights_note": "OGL alá tartozó Crown-szerkesztőségi anyagok, harmadik fél kivételeinek ellenőrzése szükséges."
+  },
+  {
+    "id": "noaa-news",
+    "name": "NOAA – Klíma és óceánkutatás",
+    "country": "US",
+    "topic_hint": "tudomány",
+    "rss_url": "https://www.noaa.gov/rss.xml",
+    "publisher": "NOAA",
+    "license": "US federal government work, exceptions apply",
+    "license_url": "https://www.noaa.gov/office-education/outreach-communication/faq",
+    "rights_reference_url": "https://www.noaa.gov/rss-feeds",
+    "ai_approved": true,
+    "enabled": true,
+    "feed_status": "to_verify_live",
+    "author_required": false,
+    "rights_note": "Csak NOAA saját, közkinccsé tett hírszövegei, képek nélkül; külső vagy szerzői joggal jelölt részeket nem veszünk át. Élő feed-teszt szükséges."
+  },
+  {
+    "id": "nih-releases",
+    "name": "NIH – Egészségügyi kutatások",
+    "country": "US",
+    "topic_hint": "tudomány",
+    "rss_url": "https://www.nih.gov/news-releases/feed.xml",
+    "publisher": "National Institutes of Health",
+    "license": "US federal government public domain, exceptions apply",
+    "license_url": "https://www.nih.gov/about-nih/frequently-asked-questions",
+    "rights_reference_url": "https://www.nih.gov/news-events/news-releases",
+    "ai_approved": true,
+    "enabled": true,
+    "feed_status": "to_verify_live",
+    "author_required": false,
+    "rights_note": "Csak NIH saját közleményei, harmadik fél kutatási művének és ábráinak közlése nélkül; cikkenkénti kivételek ellenőrzendők."
+  },
+  {
+    "id": "plos-one",
+    "name": "PLOS ONE – Nyílt tudomány",
+    "country": "WORLD",
+    "topic_hint": "tudomány",
+    "rss_url": "https://journals.plos.org/plosone/feed/atom",
+    "publisher": "Public Library of Science (PLOS)",
+    "license": "Creative Commons Attribution (article-specific license applies)",
+    "license_url": "https://plos.org/terms-of-use/",
+    "rights_reference_url": "https://journals.plos.org/plosone/s/find-and-read-articles",
+    "ai_approved": true,
+    "enabled": true,
+    "feed_status": "to_verify_live",
+    "author_required": true,
+    "rights_note": "Kizárólag nyílt licencű kutatási cikkek szövege és azonosítható szerzői; harmadik fél ábráit, képeit, nem nyílt elemeket kizárjuk; közérthető jelentőség ellenőrizendő."
   }
 ]

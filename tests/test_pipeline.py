@@ -132,7 +132,7 @@ def test_world_country_assignment(tmp_path, monkeypatch):
 
 def test_config_sources_and_license_links():
     sources = oa.load_sources()
-    assert 10 <= len(sources) <= 20
+    assert 19 <= len(sources) <= 30
     assert any(s['topic_hint']=='sport' for s in sources)
     assert any(s['country']=='HU' for s in sources)
     assert any(s['country']=='DE' for s in sources)
@@ -246,3 +246,36 @@ def test_international_static_pages_and_dormant_advertising():
     assert 'data-ad-slot="top-banner" hidden' in page
     assert 'data-ad-slot="in-feed" hidden' in page
     assert "googlesyndication.com" not in page
+
+
+def test_source_diversity_prefers_recent_alternate_publisher():
+    from datetime import datetime, timezone, timedelta
+    d=datetime.now(timezone.utc)
+    stamp=lambda hours: (d-timedelta(hours=hours)).isoformat(timespec="seconds")
+    articles=[
+        {"id":"nasa-1","country":"US","source_id":"nasa-news","published_utc":stamp(1)},
+        {"id":"nasa-2","country":"US","source_id":"nasa-news","published_utc":stamp(2)},
+        {"id":"noaa-1","country":"US","source_id":"noaa-news","published_utc":stamp(3)},
+        {"id":"nasa-old","country":"US","source_id":"nasa-news","published_utc":stamp(50)},
+    ]
+    picked=oa.select_diverse_pending(articles,3)
+    assert [item["id"] for item in picked] == ["nasa-1","noaa-1","nasa-2"]
+
+
+def test_source_diversity_never_promotes_very_old_source():
+    from datetime import datetime, timezone, timedelta
+    d=datetime.now(timezone.utc)
+    stamp=lambda hours: (d-timedelta(hours=hours)).isoformat(timespec="seconds")
+    articles=[
+        {"id":"nasa-1","country":"US","source_id":"nasa-news","published_utc":stamp(1)},
+        {"id":"nasa-2","country":"US","source_id":"nasa-news","published_utc":stamp(2)},
+        {"id":"other-old","country":"US","source_id":"noaa-news","published_utc":stamp(100)},
+    ]
+    assert [item["id"] for item in oa.select_diverse_pending(articles,2)]==["nasa-1","nasa-2"]
+
+
+def test_science_sources_from_multiple_publishers():
+    sources=oa.load_sources()
+    groups={item["publisher"] for item in sources
+            if item["topic_hint"]=="tudomány" and item["ai_approved"]}
+    assert {"NASA","NOAA","National Institutes of Health","Public Library of Science (PLOS)"}<=groups
