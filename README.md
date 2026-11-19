@@ -209,3 +209,39 @@ aktualizálni kell.
   frissül. A +/− gombok és a kétujjas gesztus megmaradtak.
 - A meglévő 10 hír és 3 ötnyelvű fordítás / futás
   korlát változatlan.
+
+## Következő szerkesztőségi lépés: hírérték és hétnapos archívum
+
+- Az AI öt magyar mondata továbbra is öt külön, a forrásból
+  alátámasztott tény. Nem jelenhet meg helyette olyan metaszöveg,
+  hogy „A cikk bemutatja...” vagy „A tanulmány ismerteti...”.
+  Új offline ellenőrzés vizsgálja a tipikus üres fordulatokat.
+  A korábbi két, eredeti forrásidézettel alátámasztott statisztikai
+  adat szabálya és a legfeljebb kétmondatos fogalommagyarázat megmarad.
+- A publikus híradat mostantól **hét UTC-naptári napot** tartalmaz,
+  a mai napot is beleértve. A news.json és az öt news-{lang}.json
+  ugyanazt az archive metaadatot tartalmazza
+  (start_date, end_date, days=7, timezone=UTC).
+- A felhasználó az „Országok” és „Témák” **két külön,
+  összecsukható paneljén** szűrhet, mobilon ezek alapból
+  összecsukva jelennek meg; az országválasztás független a
+  hírportál nyelvétől. A „Hírek megtekintése” gomb mindkét
+  panelt bezárja és a hírfolyamhoz görget.
+- Az egyetlen dátumválasztó az elmúlt hét napból **egy napot**
+  választhat ki; „Mind a 7 nap” gombbal minden rendelkezésre
+  álló hír ismét látszik. Nem tartalmaz további időszakot.
+  A dátum az *eredeti hírforrás publikálási dátuma UTC szerint*,
+  nem az AI által készített összefoglaló létrehozási ideje.
+  A kliens ugyanabból az előre elkészített hírhalmazból szűr;
+  dátumváltáskor nincs új AI-kérés és nincs új szerverköltség.
+- A hírek és a nyelvi fordítások már korábban is a GitHub Actions
+  futások között visszatöltött SQLite-adatbázisban élnek. A
+  hétnapos szűrés nem törli visszamenőleg a korábbi belső rekordokat;
+  csak a nyilvános hírfolyamból szűri ki a régebbi tételeket.
+  Ez a cache-alapú tárolás **pilothoz megfelelő**, de
+  önmagában nem tartós mentés vagy garantált archívum:
+  a GitHub cache lejárhat vagy kiürülhet. Az éles üzemi,
+  jogilag és üzletileg fontos archívumhoz külön tartós
+  adatbázis vagy automatikus mentés ajánlott.
+- A 10 új AI-hírfeldolgozás és a 3 ötnyelvű fordítás /
+  futtatás korlátja nem változik.
