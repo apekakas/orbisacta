@@ -288,15 +288,31 @@ def test_modern_mobile_controls_and_six_locale_pages():
         page = (root / lang / "index.html").read_text(encoding="utf-8")
         assert 'id="globe-toggle" aria-controls="globe-section"' in page
         assert "globe-panel:not(.mobile-open)" in page
-        assert "countryFlags" in page
+        assert "countryFlagAssets" in page
+        assert "countryAlphabet.compare(a[1],b[1])" in page
+        assert 'class="language-menu" id="language"' in page
         assert "topicIcons" in page
         assert "sortOrder='featured'" in page
         assert "tr(expanded?'hideGlobe':'showGlobe')" in page
     root_page = (root / "index.html").read_text(encoding="utf-8")
-    assert '🇭🇺 Magyar' in root_page
-    assert '🇬🇧 English' in root_page
-    assert '🇧🇷 Português' in root_page
+    assert 'data-language="hu" href="./hu/"' in root_page
+    assert 'data-language="en" href="./en/"' in root_page
+    assert 'data-language="pt" href="./pt/"' in root_page
+    assert 'id="current-language-flag"' in root_page
     translations = (root / "assets" / "i18n.js").read_text(encoding="utf-8")
     assert translations.count("featured:") == 6
     assert translations.count("showGlobe:") == 6
     assert translations.count("hideGlobe:") == 6
+
+def test_svg_flags_and_language_dependent_country_sorting():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "docs"
+    for code in ("hu", "gb", "es", "fr", "de", "br", "it", "jp", "us", "eu"):
+        svg = (root / "assets" / "flags" / (code+".svg")).read_text(encoding="utf-8")
+        assert svg.startswith("<svg") and "<script" not in svg
+    assert "MIT License" in (root / "assets" / "flags" / "LICENSE.txt").read_text(encoding="utf-8")
+    for code in ("hu", "en", "es", "fr", "de", "pt"):
+        page = (root / code / "index.html").read_text(encoding="utf-8")
+        assert "countryAlphabet.compare(a[1],b[1])" in page
+        assert 'src="./assets/flags/gb.svg"' in page
+        assert 'src="./assets/flags/br.svg"' in page

@@ -111,10 +111,49 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
 @media(max-width:360px){.logoimg{max-width:115px}.language-picker select{min-width:105px}.sort-controls{width:100%}}
 @media(prefers-reduced-motion:reduce){button.chip,.feed article,.globe-caret{transition:none}}
 
+
+/* Real self-hosted flag SVGs work across desktop browsers including Windows. */
+.language-picker{position:relative;display:flex;align-items:center}
+.language-menu{position:relative}
+.language-menu summary{list-style:none;display:flex;align-items:center;gap:9px;cursor:pointer;border:1px solid #cbded9;
+ border-radius:11px;background:#fff;color:#143d41;padding:9px 11px;min-width:144px;min-height:42px;font-size:13px;font-weight:700}
+.language-menu summary::-webkit-details-marker{display:none}
+.language-menu summary::marker{content:""}
+.language-menu summary:hover{border-color:#258e80;background:#f8fcfb}
+.language-menu summary:focus-visible,.language-option:focus-visible{outline:3px solid #69c9c2;outline-offset:2px}
+.flag-icon{width:23px;height:17px;flex:none;object-fit:cover;display:inline-block;
+ box-shadow:0 0 0 1px rgba(18,49,51,.16);border-radius:2px}
+.language-arrow{margin-left:auto;font-size:19px;line-height:1;color:#56726e}
+.language-menu[open] .language-arrow{transform:rotate(180deg)}
+.language-options{position:absolute;right:0;top:calc(100% + 7px);min-width:192px;z-index:50;
+ background:#fff;border:1px solid #d4e4e0;border-radius:12px;padding:6px;
+ box-shadow:0 16px 38px rgba(9,46,53,.18)}
+.language-option{display:flex;align-items:center;gap:10px;padding:10px 11px;color:#173b3b;
+ border-radius:8px;font-weight:650;font-size:13px;text-decoration:none}
+.language-option:hover,.language-option[aria-current="page"]{background:#eaf7f2}
+.language-option[aria-current="page"]::after{content:"✓";margin-left:auto;color:#166b62}
+.chip-flag{width:22px;height:17px;object-fit:cover;vertical-align:middle;
+ box-shadow:0 0 0 1px rgba(20,48,49,.16);border-radius:2px;flex:none}
+@media(max-width:680px){
+ .language-menu summary{min-width:115px;min-height:40px;padding:7px 9px;font-size:12px;gap:6px}
+ .language-options{right:0;min-width:175px}
+ .flag-icon{width:21px;height:16px}
+}
+@media(max-width:360px){.language-menu summary{min-width:105px}}
+
 </style>
 </head>
 <body>
-<header><img class="logoimg" src="./assets/logo-orbisacta.png" alt="OrbisActa"/><div class="header-tools"><small>Nemzetközi hírek · Szerkesztőségi próbarendszer</small><label class="language-picker"><span>Nyelv</span><select id="language" aria-label="Nyelv"><option value="hu">🇭🇺 Magyar</option><option value="en">🇬🇧 English</option><option value="es">🇪🇸 Español</option><option value="fr">🇫🇷 Français</option><option value="de">🇩🇪 Deutsch</option><option value="pt">🇧🇷 Português</option></select></label></div></header>
+<header><img class="logoimg" src="./assets/logo-orbisacta.png" alt="OrbisActa"/><div class="header-tools"><small>Nemzetközi hírek · Szerkesztőségi próbarendszer</small><div class="language-picker"><details class="language-menu" id="language">
+<summary id="language-trigger" aria-label="Nyelv"><img class="flag-icon" id="current-language-flag" src="./assets/flags/hu.svg" alt="" width="23" height="17"><span id="current-language-name">Magyar</span><span class="language-arrow" aria-hidden="true">⌄</span></summary>
+<nav class="language-options" aria-label="Language / Nyelv">
+<a class="language-option" data-language="hu" href="./hu/"><img class="flag-icon" src="./assets/flags/hu.svg" alt="" width="23" height="17"><span class="language-label">Magyar</span></a>
+<a class="language-option" data-language="en" href="./en/"><img class="flag-icon" src="./assets/flags/gb.svg" alt="" width="23" height="17"><span class="language-label">English</span></a>
+<a class="language-option" data-language="es" href="./es/"><img class="flag-icon" src="./assets/flags/es.svg" alt="" width="23" height="17"><span class="language-label">Español</span></a>
+<a class="language-option" data-language="fr" href="./fr/"><img class="flag-icon" src="./assets/flags/fr.svg" alt="" width="23" height="17"><span class="language-label">Français</span></a>
+<a class="language-option" data-language="de" href="./de/"><img class="flag-icon" src="./assets/flags/de.svg" alt="" width="23" height="17"><span class="language-label">Deutsch</span></a>
+<a class="language-option" data-language="pt" href="./pt/"><img class="flag-icon" src="./assets/flags/br.svg" alt="" width="23" height="17"><span class="language-label">Português</span></a>
+</nav></details></div></div></header>
 <main>
   <div class="eyebrow">Világkép</div>
   <h1>Weltnachrichten aus unterschiedlichen Perspektiven.</h1>
@@ -162,7 +201,8 @@ const currentLang=i18n.choose(window.ORBIS_PAGE_LANG);
 const tr=key=>i18n.t(currentLang,key);
 const names=Object.fromEntries(['HU','DE','FR','IT','JP','BR','US','GB','EU','WORLD'].map(code=>[code,i18n.name(currentLang,code)]));
 const topics=['Összes','politika','gazdaság','tudomány','sport','kultúra','egyéb'];
-const countryFlags={HU:'🇭🇺',DE:'🇩🇪',FR:'🇫🇷',IT:'🇮🇹',JP:'🇯🇵',BR:'🇧🇷',US:'🇺🇸',GB:'🇬🇧',EU:'🇪🇺',WORLD:'🌐'};
+const countryFlagAssets={HU:'hu',DE:'de',FR:'fr',IT:'it',JP:'jp',BR:'br',US:'us',GB:'gb',EU:'eu'};
+const countryAlphabet=new Intl.Collator(currentLang==='pt'?'pt-BR':currentLang,{usage:'sort',sensitivity:'base'});
 const topicIcons={politika:'🏛️',gazdaság:'📈',tudomány:'🔬',sport:'⚽',kultúra:'🎭',egyéb:'📰'};
 let previousCountries=[];
 try{const raw=JSON.parse(sessionStorage.getItem('orbisacta_countries')||'null');if(Array.isArray(raw))previousCountries=raw.filter(x=>x in names).slice(0,10)}catch(e){}
@@ -182,12 +222,21 @@ function renderControls(){
  countryEl.append(btn(tr('allCountries'),selected.size===Object.keys(names).length,()=>{
   selected=new Set(Object.keys(names));renderControls();render()
  }));
- Object.entries(names).forEach(([code,name])=>{
+ Object.entries(names).sort((a,b)=>countryAlphabet.compare(a[1],b[1])||a[0].localeCompare(b[0])).forEach(([code,name])=>{
   const total=articles.filter(a=>a.country===code).length;
-  countryEl.append(btn(countryFlags[code]+' '+name+' ('+total+')',selected.has(code),()=>{
+  const button=btn(name+' ('+total+')',selected.has(code),()=>{
    if(selected.has(code))selected.delete(code);else if(selected.size<10)selected.add(code);
    renderControls();render();
-  }));
+  });
+  if(countryFlagAssets[code]){
+   const flag=document.createElement('img');
+   flag.className='chip-flag';
+   flag.src='./assets/flags/'+countryFlagAssets[code]+'.svg';
+   flag.alt='';
+   flag.width=22;flag.height=17;
+   button.prepend(flag);
+  }else button.prepend('🌐 ');
+  countryEl.append(button);
  });
  const topicEl=document.getElementById('topics');topicEl.replaceChildren();
  topics.forEach(code=>{
@@ -258,11 +307,15 @@ globeToggle.addEventListener('click',()=>{
  globeToggle.setAttribute('aria-expanded',String(expanded));
  globeToggle.querySelector('span').textContent=tr(expanded?'hideGlobe':'showGlobe');
 });
-document.getElementById('language').addEventListener('change',e=>{
- const chosen=e.target.value;
- if(!i18n.locales[chosen])return;
- i18n.remember(chosen);
- window.location.assign(new URL('./'+chosen+'/',document.baseURI).href);
+document.querySelectorAll('.language-option').forEach(link=>link.addEventListener('click',()=>{
+ i18n.remember(link.dataset.language);
+}));
+document.addEventListener('click',event=>{
+ const picker=document.getElementById('language');
+ if(picker.open&&!picker.contains(event.target))picker.open=false;
+});
+document.getElementById('language').addEventListener('keydown',event=>{
+ if(event.key==='Escape'){event.currentTarget.open=false;event.currentTarget.querySelector('summary').focus();}
 });
 globeView=window.OrbisGlobe&&window.OrbisGlobe.mount({
  translate:tr,countryName:code=>names[code]||code,

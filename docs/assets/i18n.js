@@ -188,8 +188,22 @@ function apply(lang){
  const groups=document.querySelectorAll(".filters .group-label");
  if(groups[0])groups[0].textContent=t(lang,"countryLabel");
  if(groups[1])groups[1].textContent=t(lang,"topicLabel");
- const select=document.getElementById("language");
- if(select){select.value=lang;select.setAttribute("aria-label",t(lang,"language"))}
+ const picker=document.getElementById("language");
+ if(picker){
+  const chosen=picker.querySelector('.language-option[data-language="'+lang+'"]');
+  if(chosen){
+   const flag=picker.querySelector("#current-language-flag");
+   const label=picker.querySelector("#current-language-name");
+   const value=chosen.querySelector(".language-label").textContent;
+   flag.src=chosen.querySelector("img").getAttribute("src");
+   label.textContent=value;
+   picker.querySelector("summary").setAttribute("aria-label",t(lang,"language")+": "+value);
+  }
+  picker.querySelectorAll(".language-option").forEach(link=>{
+   if(link.dataset.language===lang)link.setAttribute("aria-current","page");
+   else link.removeAttribute("aria-current");
+  });
+ }
  const toggle=document.getElementById("globe-toggle");if(toggle){const label=toggle.querySelector("span");if(label)label.textContent=t(lang,"showGlobe")}
  const note=document.getElementById("translation-note");
  if(note)note.textContent=t(lang,"translationNote");
