@@ -279,3 +279,24 @@ def test_science_sources_from_multiple_publishers():
     groups={item["publisher"] for item in sources
             if item["topic_hint"]=="tudomány" and item["ai_approved"]}
     assert {"NASA","NOAA","National Institutes of Health","Public Library of Science (PLOS)"}<=groups
+
+
+def test_modern_mobile_controls_and_six_locale_pages():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "docs"
+    for lang in ("hu", "en", "es", "fr", "de", "pt"):
+        page = (root / lang / "index.html").read_text(encoding="utf-8")
+        assert 'id="globe-toggle" aria-controls="globe-section"' in page
+        assert "globe-panel:not(.mobile-open)" in page
+        assert "countryFlags" in page
+        assert "topicIcons" in page
+        assert "sortOrder='featured'" in page
+        assert "tr(expanded?'hideGlobe':'showGlobe')" in page
+    root_page = (root / "index.html").read_text(encoding="utf-8")
+    assert '🇭🇺 Magyar' in root_page
+    assert '🇬🇧 English' in root_page
+    assert '🇧🇷 Português' in root_page
+    translations = (root / "assets" / "i18n.js").read_text(encoding="utf-8")
+    assert translations.count("featured:") == 6
+    assert translations.count("showGlobe:") == 6
+    assert translations.count("hideGlobe:") == 6

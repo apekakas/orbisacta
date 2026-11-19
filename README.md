@@ -112,3 +112,27 @@ nyelvfelismeréshez külön, jogszerű helymeghatározási réteg kell.
 A nyelvi SEO-végpontok a jelenlegi Pages-címen működnek, de a
 saját domainre átálláskor a kanonikus URL-eket és sitemapet
 aktualizálni kell.
+
+
+## Mobilos megjelenítés és szerkesztői változatosság (v0.6 pilot)
+
+- A mobilos nézetben a földgömb alapértelmezésben becsukva jelenik meg,
+  de egyetlen gombbal előhívható. A hírek és az ország-/témaválasztó
+  kisebb képernyőn kerülnek előtérbe.
+- Zászlójelölések a hat nyelv mellett, zászlók az országválasztóknál;
+  ujjmozdulattal görgethető, billentyűzettel is használható gombok.
+- Az „Ajánlott” nézet frissesség, szerkesztőségi fontosság és eltérő
+  kiadók megjelenítése alapján rendez. **Nem mért népszerűségi rangsor.**
+  Megmarad a „Legfrissebb” és „Legfontosabb” válogatás is.
+- A hírgyűjtés változatosabb tudományos forrásokkal bővült:
+  NOAA (klíma/óceán), NIH (egészségügy), PLOS ONE (kutatások).
+  A teljes forráslista 22 RSS-csatorna, de egy új csatorna csak
+  sikeres RSS-ellenőrzés után ad tényleges híreket. Az AI-korlát nem nőtt.
+- A hírek első körös AI-válogatása országok között körbejár, egy
+  országon belül pedig 36 órán belüli hasonlóan friss cikkek esetén
+  előnyt ad egy másik kiadónak; nem tol régi hírt előre csak azért,
+  mert más kiadótól származik.
+- A látogatottság és országonkénti népszerűség mérése **még nincs
+  bekapcsolva**. Később agregált, adatvédelmileg megfelelő analitikai
+  mérés vagy külön országos keresési trendjelzés építhető be, de a
+  keresési trend nem azonos a cikk olvasottságával.
