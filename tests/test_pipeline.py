@@ -444,3 +444,48 @@ def test_glossary_is_rendered_on_all_six_locale_pages():
         assert ".article-context" in page
     dictionary = (root / "assets" / "i18n.js").read_text(encoding="utf-8")
     assert dictionary.count('backgroundTitle:') == 6
+
+
+def test_six_new_countries_and_source_candidates_are_configured():
+    import json
+    codes = {"IN", "CN", "AU", "SA", "NG", "ZA"}
+    assert codes <= set(oa.COUNTRIES)
+    sources = oa.load_sources()
+    new = {s["country"]: s for s in sources if s["country"] in codes}
+    assert codes == set(new)
+    assert all(s["publisher"] == "Global Voices" for s in new.values())
+    assert all(s.get("rights_reference_url") and s.get("author_required") for s in new.values())
+    assert len(sources) == 28
+
+
+def test_mobile_country_buttons_wrap_and_zoom_works_on_all_language_pages():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "docs"
+    flags = {"in", "cn", "au", "sa", "ng", "za"}
+    for code in flags:
+        svg = (root / "assets" / "flags" / (code + ".svg")).read_text(encoding="utf-8")
+        assert svg.startswith("<svg") and "<script" not in svg
+    for language in ("hu", "en", "es", "fr", "de", "pt"):
+        page = (root / language / "index.html").read_text(encoding="utf-8")
+        assert "grid-template-columns:repeat(2,minmax(0,1fr))" in page
+        assert ".filters #countries button.chip" in page
+        assert "overflow-wrap:anywhere" in page
+        assert "data-globe-zoom=\"in\"" in page
+        assert "data-globe-zoom=\"out\"" in page
+        assert "selected.size<10" not in page
+        assert "slice(0,10)" not in page
+        for country in flags:
+            assert "'" + country.upper() + "'" in page
+
+
+def test_globe_mobile_pinch_and_expanded_regional_navigation():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "docs"
+    code = (root / "assets" / "globe.js").read_text(encoding="utf-8")
+    assert "const pointers=new Map()" in code
+    assert "pinchDistance" in code
+    assert "pointers.size>=2" in code
+    assert "data-globe-zoom" in code
+    assert "minScale=125,maxScale=360" in code
+    assert "africa:[22,0]" in code
+    assert "oceania:[135,-25]" in code
