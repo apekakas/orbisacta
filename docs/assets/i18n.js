@@ -25,7 +25,7 @@ hu:{
  globeAll:"Minden ország kiválasztva – kattints egy jelölőre a szűréshez.",
  globeFiltered:"kiválasztott földrajzi nézet",globeStory:"publikált hír",mapError:"A térkép betöltése nem sikerült. Az országválasztó gombok használhatók.",
  mapLinesError:"A térképvonalak nem töltődtek be, az országjelölők használhatók.",
- chooseCountry:"híreinek kiválasztása",language:"Nyelv",translationNote:"Az idegen nyelvű hírek ellenőrzött magyar összefoglalókból készülnek. Az új fordítások fokozatosan jelennek meg."
+ chooseCountry:"híreinek kiválasztása",showGlobe:"🌍 Földgömb megnyitása",hideGlobe:"Földgömb elrejtése",featured:"Ajánlott · friss és fontos",language:"Nyelv",translationNote:"Az idegen nyelvű hírek ellenőrzött magyar összefoglalókból készülnek. Az új fordítások fokozatosan jelennek meg."
 },
 en:{
  tag:"International news · Editorial pilot",eye:"World view",
@@ -49,7 +49,7 @@ en:{
  globeAll:"All regions selected – click a marker to filter.",
  globeFiltered:"selected regions",globeStory:"published stories",mapError:"The globe could not load. Country buttons still work.",
  mapLinesError:"Map outlines could not be loaded; country markers remain available.",
- chooseCountry:"select news from",language:"Language",translationNote:"English content is translated from verified Hungarian summaries. New translations appear gradually."
+ chooseCountry:"select news from",showGlobe:"Show interactive globe",hideGlobe:"Hide globe",featured:"Recommended · fresh and relevant",language:"Language",translationNote:"English content is translated from verified Hungarian summaries. New translations appear gradually."
 },
 es:{
  tag:"Noticias internacionales · Proyecto editorial",eye:"Visión global",
@@ -73,7 +73,7 @@ es:{
  globeAll:"Todas las regiones seleccionadas. Elige un marcador para filtrar.",
  globeFiltered:"regiones seleccionadas",globeStory:"noticias publicadas",mapError:"No se pudo cargar el globo. Los botones de países funcionan.",
  mapLinesError:"No se cargaron los contornos; los marcadores siguen disponibles.",
- chooseCountry:"seleccionar noticias de",language:"Idioma",translationNote:"Las noticias en español se traducen a partir de resúmenes húngaros verificados."
+ chooseCountry:"seleccionar noticias de",showGlobe:"Mostrar globo interactivo",hideGlobe:"Ocultar globo",featured:"Recomendadas · recientes y relevantes",language:"Idioma",translationNote:"Las noticias en español se traducen a partir de resúmenes húngaros verificados."
 },
 fr:{
  tag:"Actualités internationales · Projet éditorial",eye:"Regards sur le monde",
@@ -97,7 +97,7 @@ fr:{
  globeAll:"Toutes les régions sélectionnées – cliquez sur un repère pour filtrer.",
  globeFiltered:"régions sélectionnées",globeStory:"articles publiés",mapError:"Le globe ne s'est pas chargé. Les filtres de pays restent disponibles.",
  mapLinesError:"Les contours ne sont pas disponibles ; les repères fonctionnent.",
- chooseCountry:"sélectionner les nouvelles de",language:"Langue",translationNote:"Les résumés français proviennent de contenus hongrois vérifiés. Les traductions arrivent progressivement."
+ chooseCountry:"sélectionner les nouvelles de",showGlobe:"Afficher le globe",hideGlobe:"Masquer le globe",featured:"À la une · récentes et importantes",language:"Langue",translationNote:"Les résumés français proviennent de contenus hongrois vérifiés. Les traductions arrivent progressivement."
 },
 de:{
  tag:"Internationale Nachrichten · Redaktionspilot",eye:"Weltblick",
@@ -121,7 +121,7 @@ de:{
  globeAll:"Alle Regionen ausgewählt – zum Filtern eine Markierung anklicken.",
  globeFiltered:"ausgewählte Regionen",globeStory:"veröffentlichte Meldungen",mapError:"Die Weltkarte konnte nicht geladen werden. Länderfilter funktionieren weiter.",
  mapLinesError:"Kartengrenzen konnten nicht geladen werden; Markierungen sind verfügbar.",
- chooseCountry:"Nachrichten auswählen aus",language:"Sprache",translationNote:"Deutsche Meldungen werden aus geprüften ungarischen Zusammenfassungen übersetzt."
+ chooseCountry:"Nachrichten auswählen aus",showGlobe:"Globus anzeigen",hideGlobe:"Globus ausblenden",featured:"Empfohlen · aktuell und wichtig",language:"Sprache",translationNote:"Deutsche Meldungen werden aus geprüften ungarischen Zusammenfassungen übersetzt."
 },
 pt:{
  tag:"Notícias internacionais · Projeto editorial",eye:"Visão do mundo",
@@ -145,7 +145,7 @@ pt:{
  globeAll:"Todas as regiões selecionadas – clique em um marcador para filtrar.",
  globeFiltered:"regiões selecionadas",globeStory:"notícias publicadas",mapError:"O globo não pôde ser carregado. Os filtros por país seguem funcionando.",
  mapLinesError:"Os contornos do mapa não foram carregados; os marcadores seguem disponíveis.",
- chooseCountry:"selecionar notícias de",language:"Idioma",translationNote:"Os textos em português são traduzidos a partir de resumos húngaros verificados."
+ chooseCountry:"selecionar notícias de",showGlobe:"Mostrar globo interativo",hideGlobe:"Ocultar globo",featured:"Em destaque · recentes e importantes",language:"Idioma",translationNote:"Os textos em português são traduzidos a partir de resumos húngaros verificados."
 }
 };
 const fallbackCountries={HU:"Magyarország",DE:"Németország",FR:"Franciaország",IT:"Olaszország",JP:"Japán",BR:"Brazília",US:"Egyesült Államok",GB:"Egyesült Királyság"};
@@ -179,7 +179,7 @@ function apply(lang){
  '[data-globe-focus="asia"]':"asia","#globe-reset":"allNews",
  ".filters .group-label:first-child":"countryLabel",
  ".sort-controls label":"sort",'#sort option[value="latest"]':"latest",
- '#sort option[value="importance"]':"importance","footer":"footer"
+ '#sort option[value="importance"]':"importance",'#sort option[value="featured"]':"featured","footer":"footer"
  };
  for(const [selector,key] of Object.entries(dictionary)){
   const element=document.querySelector(selector);
@@ -190,6 +190,7 @@ function apply(lang){
  if(groups[1])groups[1].textContent=t(lang,"topicLabel");
  const select=document.getElementById("language");
  if(select){select.value=lang;select.setAttribute("aria-label",t(lang,"language"))}
+ const toggle=document.getElementById("globe-toggle");if(toggle){const label=toggle.querySelector("span");if(label)label.textContent=t(lang,"showGlobe")}
  const note=document.getElementById("translation-note");
  if(note)note.textContent=t(lang,"translationNote");
  document.title="OrbisActa · "+t(lang,"tag");

@@ -72,17 +72,56 @@ footer{max-width:1100px;margin:auto;padding:25px 22px 50px;color:var(--sub);font
 .ad-slot[hidden]{display:none!important}
 .ad-slot{margin:22px 0;border:1px solid var(--line);border-radius:10px}
 @media(max-width:680px){.header-tools{align-items:flex-end}.language-picker select{min-width:115px}.language-picker span{display:none}}
+
+/* v0.6 mobile-first editorial controls; no external design dependencies. */
+.filters{background:linear-gradient(155deg,#f8fbfa,#f1f7f6);box-shadow:0 8px 26px rgba(13,56,65,.045);padding:24px;border-color:#d5e9e5}
+.filters .chips{gap:9px}
+button.chip{display:inline-flex;align-items:center;gap:7px;border:1px solid #cbded9;background:#fff;border-radius:999px;
+ padding:10px 16px;min-height:42px;font-weight:600;transition:background .14s,color .14s,border-color .14s,transform .14s;white-space:nowrap}
+button.chip:hover{border-color:#2b8a80;transform:translateY(-1px)}
+button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#fff;box-shadow:0 3px 10px rgba(7,63,67,.14)}
+.feed article{transition:box-shadow .16s,border-color .16s}
+.feed article:hover{box-shadow:0 9px 22px rgba(13,47,60,.07);border-color:#b9ded4}
+.globe-toggle{display:none;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:13px 16px;
+ border:1px solid #b9d9d4;border-radius:12px;background:#f3fbf8;color:#084b47;font-size:14px;font-weight:750;cursor:pointer}
+.globe-toggle:focus-visible{outline:3px solid #69c9c2;outline-offset:2px}
+.globe-caret{font-size:22px;line-height:1;transition:transform .2s}
+.globe-toggle[aria-expanded=true] .globe-caret{transform:rotate(180deg)}
+@media(max-width:680px){
+ header{padding:12px 14px;gap:8px}.logoimg{height:38px;max-width:150px}header small{font-size:10px;max-width:140px}
+ .language-picker select{font-size:12px;min-width:112px;padding:8px}
+ main{padding:22px 14px 44px}h1{font-size:clamp(27px,7.5vw,34px);line-height:1.15}
+ .lead{font-size:14px;margin-bottom:18px}
+ .globe-toggle{display:flex;margin:12px 0 12px}
+ .globe-panel{margin:12px 0 18px;border-radius:14px}
+ .globe-panel:not(.mobile-open){display:none}
+ .globe-stage{min-height:auto}
+ .globe-map-note{font-size:10px;left:9px;bottom:8px;padding:5px}
+ .globe-source-note{margin:4px 0 15px;font-size:10px}
+ .filters{padding:16px 12px;gap:12px;border-radius:12px}
+ .filters .chips{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;scrollbar-width:thin;scroll-snap-type:x proximity;
+ padding:4px 3px 10px;overscroll-behavior-inline:contain}
+ .filters .chips button{scroll-snap-align:start;flex:0 0 auto;font-size:12px;padding:9px 13px;min-height:40px}
+ .meta{gap:10px;margin:18px 0 12px}.sort-controls select{max-width:195px;font-size:12px}
+ .feed{grid-template-columns:minmax(0,1fr);gap:12px}
+ .feed article{min-height:0;padding:17px;border-radius:12px}.feed article h2{font-size:19px}
+ .toprow{flex-wrap:wrap;font-size:10px}
+}
+@media(max-width:360px){.logoimg{max-width:115px}.language-picker select{min-width:105px}.sort-controls{width:100%}}
+@media(prefers-reduced-motion:reduce){button.chip,.feed article,.globe-caret{transition:none}}
+
 </style>
 </head>
 <body>
-<header><img class="logoimg" src="./assets/logo-orbisacta.png" alt="OrbisActa"/><div class="header-tools"><small>Nemzetközi hírek · Szerkesztőségi próbarendszer</small><label class="language-picker"><span>Nyelv</span><select id="language" aria-label="Nyelv"><option value="hu">Magyar</option><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option></select></label></div></header>
+<header><img class="logoimg" src="./assets/logo-orbisacta.png" alt="OrbisActa"/><div class="header-tools"><small>Nemzetközi hírek · Szerkesztőségi próbarendszer</small><label class="language-picker"><span>Nyelv</span><select id="language" aria-label="Nyelv"><option value="hu">🇭🇺 Magyar</option><option value="en">🇬🇧 English</option><option value="es">🇪🇸 Español</option><option value="fr">🇫🇷 Français</option><option value="de">🇩🇪 Deutsch</option><option value="pt">🇧🇷 Português</option></select></label></div></header>
 <main>
   <div class="eyebrow">Világkép</div>
   <h1>A világ hírei, több ország nézőpontjából.</h1>
   <p class="lead">Válaszd ki az országokat és témákat. Az összefoglalókat csak a forrásanyag és a felhasználási jogok ellenőrzése után jelenítjük meg.</p>
+  <button type="button" class="globe-toggle" id="globe-toggle" aria-controls="globe-section" aria-expanded="false">🌍 <span>Földgömb megnyitása</span><span class="globe-caret" aria-hidden="true">⌄</span></button>
   <!-- Advertising placeholders are inactive. No ad network, tracking or cookies are loaded. -->
   <div class="ad-slot" id="ad-top" data-ad-slot="top-banner" hidden aria-hidden="true"></div>
-  <section class="globe-panel" aria-label="Interaktív földgömbös hírböngészés">
+  <section class="globe-panel" id="globe-section" aria-label="Interaktív földgömbös hírböngészés">
     <div id="globe-stage" class="globe-stage">
       <svg id="globe-map" viewBox="0 0 720 440" role="group" aria-label="Forgatható földgömb, országválasztó jelölőkkel"></svg>
       <div class="globe-map-note">Húzd a forgatáshoz · Görgess a nagyításhoz · Kattints az országra</div>
@@ -107,7 +146,7 @@ footer{max-width:1100px;margin:auto;padding:25px 22px 50px;color:var(--sub);font
     <div><div class="group-label">Témakör</div><div class="chips" id="topics"></div></div>
   </section>
   <p id="translation-note" class="translation-note"></p>
-  <div class="meta"><div class="count" id="count">Hírek betöltése…</div><div class="sort-controls"><label for="sort">Rendezés</label><select id="sort"><option value="latest">Legfrissebb elöl</option><option value="importance">Legfontosabb elöl</option></select></div><div id="updated"></div></div>
+  <div class="meta"><div class="count" id="count">Hírek betöltése…</div><div class="sort-controls"><label for="sort">Rendezés</label><select id="sort"><option value="featured">Ajánlott · friss és fontos</option><option value="latest">Legfrissebb elöl</option><option value="importance">Legfontosabb elöl</option></select></div><div id="updated"></div></div>
   <section class="feed" id="feed" aria-live="polite"></section>
   <div class="ad-slot" id="ad-in-feed" data-ad-slot="in-feed" hidden aria-hidden="true"></div>
 </main>
@@ -121,12 +160,14 @@ const currentLang=i18n.choose(window.ORBIS_PAGE_LANG);
 const tr=key=>i18n.t(currentLang,key);
 const names=Object.fromEntries(['HU','DE','FR','IT','JP','BR','US','GB','EU','WORLD'].map(code=>[code,i18n.name(currentLang,code)]));
 const topics=['Összes','politika','gazdaság','tudomány','sport','kultúra','egyéb'];
+const countryFlags={HU:'🇭🇺',DE:'🇩🇪',FR:'🇫🇷',IT:'🇮🇹',JP:'🇯🇵',BR:'🇧🇷',US:'🇺🇸',GB:'🇬🇧',EU:'🇪🇺',WORLD:'🌐'};
+const topicIcons={politika:'🏛️',gazdaság:'📈',tudomány:'🔬',sport:'⚽',kultúra:'🎭',egyéb:'📰'};
 let previousCountries=[];
 try{const raw=JSON.parse(sessionStorage.getItem('orbisacta_countries')||'null');if(Array.isArray(raw))previousCountries=raw.filter(x=>x in names).slice(0,10)}catch(e){}
 let selected=new Set(previousCountries.length?previousCountries:Object.keys(names));
 let topic='Összes';
 try{const stored=sessionStorage.getItem('orbisacta_topic');if(topics.includes(stored))topic=stored}catch(e){}
-let articles=[],sortOrder='latest';
+let articles=[],sortOrder='featured';
 const feed=document.getElementById('feed');
 let globeView=null;
 i18n.apply(currentLang);
@@ -141,14 +182,14 @@ function renderControls(){
  }));
  Object.entries(names).forEach(([code,name])=>{
   const total=articles.filter(a=>a.country===code).length;
-  countryEl.append(btn(name+' ('+total+')',selected.has(code),()=>{
+  countryEl.append(btn(countryFlags[code]+' '+name+' ('+total+')',selected.has(code),()=>{
    if(selected.has(code))selected.delete(code);else if(selected.size<10)selected.add(code);
    renderControls();render();
   }));
  });
  const topicEl=document.getElementById('topics');topicEl.replaceChildren();
  topics.forEach(code=>{
-  const label=code==='Összes'?tr('allTopics'):tr('topics')[code];
+  const label=code==='Összes'?tr('allTopics'):topicIcons[code]+' '+tr('topics')[code];
   topicEl.append(btn(label,topic===code,()=>{topic=code;renderControls();render()}));
  });
  rememberFilters();
@@ -156,10 +197,25 @@ function renderControls(){
 function el(tag,text,klass){const n=document.createElement(tag);if(text!==null&&text!==undefined)n.textContent=text;if(klass)n.className=klass;return n}
 function render(){
  if(globeView)globeView.update(articles,selected);
- const visible=articles.filter(a=>selected.has(a.country)&&(topic==='Összes'||a.topic===topic)).sort((a,b)=>{
-  const dateDiff=(Date.parse(b.published_utc)||0)-(Date.parse(a.published_utc)||0);
-  return sortOrder==='importance'?((b.importance||0)-(a.importance||0))||dateDiff:dateDiff;
- });
+ const chosen=articles.filter(a=>selected.has(a.country)&&(topic==='Összes'||a.topic===topic));
+ const dateDiff=(a,b)=>(Date.parse(b.published_utc)||0)-(Date.parse(a.published_utc)||0);
+ function editorialScore(a){
+  const age=Math.max(0,(Date.now()-(Date.parse(a.published_utc)||0))/3600000);
+  return Number(a.importance||0)*.62+Math.max(0,36-age*.35);
+ }
+ let visible=chosen.slice().sort((a,b)=>sortOrder==='importance'?
+  ((b.importance||0)-(a.importance||0))||dateDiff(a,b):
+  sortOrder==='latest'?dateDiff(a,b):editorialScore(b)-editorialScore(a)||dateDiff(a,b));
+ if(sortOrder==='featured'){
+  const diverse=[],remaining=visible.slice(),lastSources=[];
+  while(remaining.length){
+   const window=remaining.slice(0,Math.min(12,remaining.length));
+   const candidate=window.find(a=>!lastSources.includes(a.source_name))||remaining[0];
+   diverse.push(candidate);remaining.splice(remaining.indexOf(candidate),1);
+   lastSources.unshift(candidate.source_name);if(lastSources.length>2)lastSources.pop();
+  }
+  visible=diverse;
+ }
  document.getElementById('count').textContent=visible.length+' '+tr('count')+(visible.length!==articles.length?' · '+tr('filtered'):'');
  feed.replaceChildren();
  if(!visible.length){
@@ -193,6 +249,13 @@ async function init(){
  renderControls();render();
 }
 document.getElementById('sort').addEventListener('change',e=>{sortOrder=e.target.value;render()});
+const globeToggle=document.getElementById('globe-toggle');
+globeToggle.addEventListener('click',()=>{
+ const panel=document.getElementById('globe-section');
+ const expanded=panel.classList.toggle('mobile-open');
+ globeToggle.setAttribute('aria-expanded',String(expanded));
+ globeToggle.querySelector('span').textContent=tr(expanded?'hideGlobe':'showGlobe');
+});
 document.getElementById('language').addEventListener('change',e=>{
  const chosen=e.target.value;
  if(!i18n.locales[chosen])return;
