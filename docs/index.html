@@ -71,7 +71,7 @@ footer{max-width:1100px;margin:auto;padding:25px 22px 50px;color:var(--sub);font
 .translation-note{color:var(--sub);font-size:12px;line-height:1.5;margin:12px 0}
 .ad-slot[hidden]{display:none!important}
 .ad-slot{margin:22px 0;border:1px solid var(--line);border-radius:10px}
-@media(max-width:680px){.header-tools{align-items:flex-end}.language-picker select{min-width:115px}.language-picker span{display:none}}
+@media(max-width:680px){.header-tools{align-items:flex-end}.language-picker select{min-width:115px}}
 
 /* v0.6 mobile-first editorial controls; no external design dependencies. */
 .filters{background:linear-gradient(155deg,#f8fbfa,#f1f7f6);box-shadow:0 8px 26px rgba(13,56,65,.045);padding:24px;border-color:#d5e9e5}
@@ -175,6 +175,51 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
 }
 @media(max-width:370px){.filters #topics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+
+/* Quick-access country + topic filters: collapsed by default on mobile. */
+.filters-panel{margin:16px 0 6px;border:1px solid #c8deda;border-radius:14px;background:#f8fbfa;overflow:hidden}
+.filters-summary{display:flex;align-items:center;gap:12px;min-height:68px;padding:12px 17px;cursor:pointer;list-style:none}
+.filters-summary::-webkit-details-marker{display:none}
+.filters-summary::marker{content:""}
+.filters-summary:hover{background:#eff8f5}
+.filters-summary:focus-visible{outline:3px solid #69c9c2;outline-offset:-3px}
+.filters-heading{font-weight:800;color:#123e42;font-size:15px;display:flex;align-items:center;gap:8px}
+.filters-overview{color:#536b6c;font-size:12px;line-height:1.35;margin-left:auto;text-align:right}
+.filters-chevron{color:#256d63;font-size:22px;line-height:1;transition:transform .15s}
+.filters-panel[open] .filters-chevron{transform:rotate(180deg)}
+.filters-panel .filters{border:0;border-top:1px solid #d6e7e3;border-radius:0;margin:0;box-shadow:none;background:#f8fbfa}
+.show-news{border:0;background:#075f5b;color:white;border-radius:11px;min-height:46px;padding:10px 18px;
+ font-size:13px;font-weight:750;cursor:pointer;justify-self:start}
+.show-news:hover{background:#084842}
+.show-news:focus-visible{outline:3px solid #64cbbd;outline-offset:2px}
+/* Keep language names next to the actual flag at ALL viewport sizes. */
+#current-language-name,.language-option .language-label{display:inline!important;white-space:nowrap}
+.language-menu summary{min-width:154px}
+.language-options{min-width:198px}
+.globe-zoom-controls output{background:rgba(7,40,53,.82);border-radius:7px;color:#e4f6ed;
+ font-size:11px;line-height:1.4;text-align:center;padding:3px 2px;font-weight:700}
+@media(max-width:680px){
+ .language-picker span{display:inline}
+ .language-menu summary{min-width:0;max-width:155px;gap:6px;padding:7px 9px}
+ #current-language-name{display:inline!important;font-size:12px;letter-spacing:-.01em}
+ .language-options{min-width:184px}
+ .logoimg{max-width:min(38vw,145px)}
+ .header-tools{min-width:0;align-items:flex-end}
+ .filters-summary{min-height:60px;padding:10px 12px;gap:8px}
+ .filters-heading{font-size:13px;flex:0 0 auto}
+ .filters-overview{font-size:11px;overflow-wrap:anywhere}
+ .filters-panel{margin:12px 0 4px}
+ .filters-panel .filters{padding:12px}
+ .show-news{width:100%;justify-self:stretch}
+ .globe-source-note{display:none}
+ .globe-panel.mobile-open + .globe-source-note{display:block}
+}
+@media(max-width:360px){
+ .logoimg{max-width:33vw}
+ .language-menu summary{padding:6px 7px;gap:5px}
+ #current-language-name{font-size:11px}
+}
+
 </style>
 </head>
 <body>
@@ -198,7 +243,7 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
   <section class="globe-panel" id="globe-section" aria-label="Interaktív földgömbös hírböngészés">
     <div id="globe-stage" class="globe-stage">
       <svg id="globe-map" viewBox="0 0 720 440" role="group" aria-label="Forgatható földgömb, országválasztó jelölőkkel"></svg>
-      <div class="globe-zoom-controls" role="group" aria-label="Földgömb nagyítása"><button type="button" data-globe-zoom="in" aria-label="Nagyítás" title="Nagyítás">+</button><button type="button" data-globe-zoom="out" aria-label="Kicsinyítés" title="Kicsinyítés">−</button></div>
+      <div class="globe-zoom-controls" role="group" aria-label="Földgömb nagyítása"><button type="button" data-globe-zoom="in" aria-label="Nagyítás" title="Nagyítás">+</button><output id="globe-zoom-level" aria-label="Nagyítás mértéke">100%</output><button type="button" data-globe-zoom="out" aria-label="Kicsinyítés" title="Kicsinyítés">−</button></div>
       <div class="globe-map-note">Húzd a forgatáshoz · Görgess a nagyításhoz · Kattints az országra</div>
     </div>
     <div class="globe-side">
@@ -218,10 +263,14 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
     </div>
   </section>
   <p class="globe-source-note">Térképi alapadatok: Natural Earth (közkincs). A jelölők tájékoztató jellegűek, nem országhatár-kijelölések.</p>
-  <section class="filters" aria-label="Hírszűrők">
-    <div><div class="group-label">Országok</div><div class="chips" id="countries"></div></div>
-    <div><div class="group-label">Témakör</div><div class="chips" id="topics"></div></div>
-  </section>
+  <details class="filters-panel" id="filters-panel">
+    <summary class="filters-summary"><span class="filters-heading"><span aria-hidden="true">☷</span><span id="filters-title">Országok és témák</span></span><span class="filters-overview" id="filter-current">Összes ország · Összes</span><span class="filters-chevron" aria-hidden="true">⌄</span></summary>
+    <section class="filters" aria-label="Hírszűrők">
+      <div><div class="group-label">Országok</div><div class="chips" id="countries"></div></div>
+      <div><div class="group-label">Témakör</div><div class="chips" id="topics"></div></div>
+      <button type="button" id="show-news" class="show-news">Hírek megtekintése</button>
+    </section>
+  </details>
   <p id="translation-note" class="translation-note"></p>
   <div class="meta"><div class="count" id="count">Hírek betöltése…</div><div class="sort-controls"><label for="sort">Rendezés</label><select id="sort"><option value="featured">Ajánlott · friss és fontos</option><option value="latest">Legfrissebb elöl</option><option value="importance">Legfontosabb elöl</option></select></div><div id="updated"></div></div>
   <section class="feed" id="feed" aria-live="polite"></section>
@@ -279,6 +328,12 @@ function renderControls(){
   }else button.prepend('🌐 ');
   countryEl.append(button);
  });
+ const current=document.getElementById('filter-current');
+ const selection=selected.size===Object.keys(names).length?tr('allCountries'):selected.size+' '+tr('countriesShort');
+ const chosenTopic=topic==='Összes'?tr('allTopics'):tr('topics')[topic];
+ if(current)current.textContent=selection+' · '+chosenTopic;
+ document.getElementById('filters-title').textContent=tr('filtersTitle');
+ document.getElementById('show-news').textContent=tr('viewResults');
  const topicEl=document.getElementById('topics');topicEl.replaceChildren();
  topics.forEach(code=>{
   const label=code==='Összes'?tr('allTopics'):topicIcons[code]+' '+tr('topics')[code];
@@ -347,6 +402,12 @@ async function init(){
  renderControls();render();
 }
 document.getElementById('sort').addEventListener('change',e=>{sortOrder=e.target.value;render()});
+const filtersPanel=document.getElementById('filters-panel');
+if(window.matchMedia('(min-width: 801px)').matches)filtersPanel.open=true;
+document.getElementById('show-news').addEventListener('click',()=>{
+ filtersPanel.open=false;
+ document.getElementById('feed').scrollIntoView({behavior:'smooth',block:'start'});
+});
 const globeToggle=document.getElementById('globe-toggle');
 globeToggle.addEventListener('click',()=>{
  const panel=document.getElementById('globe-section');
@@ -368,7 +429,7 @@ globeView=window.OrbisGlobe&&window.OrbisGlobe.mount({
  translate:tr,countryName:code=>names[code]||code,
  onCountry:code=>{
   selected=new Set([code]);renderControls();render();
-  document.querySelector('.filters').scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('feed').scrollIntoView({behavior:'smooth',block:'start'});
  },
  onReset:()=>{selected=new Set(Object.keys(names));topic='Összes';renderControls();render()}
 });
