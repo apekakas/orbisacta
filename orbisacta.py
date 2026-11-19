@@ -291,10 +291,18 @@ Additionally return "local_terms": 0-2 objects of form
 "explanation_hu":"one fluent, informative Hungarian explanatory sentence",
 "support_quote":"exact 15+ character source_text substring containing the term
 and supporting the explanation"}.
-Choose country-specific institutions, laws, acronyms or social concepts
-that readers abroad would not know. Explain ONLY when the source itself
-provides enough information; otherwise return local_terms:[].
-At most TWO glossary sentences total, separate from the five-point summary.
+Prefer up to TWO unfamiliar expressions that readers of the five-point
+summary may need explained: country-specific institutions or laws, acronyms,
+technical/scientific concepts, economic and labour-market indicators or
+specialized terminology. Prefer terms actually used in the five Hungarian
+sentences. Provide a concise plain-language interpretation in one expanded
+Hungarian sentence per term, with a clear meaning and practical relevance.
+For EACH definition, source_text must explicitly contain the term AND enough
+information to support the interpretation, with an exact supporting quote.
+Do not guess a definition from general knowledge or from the name alone.
+If the source offers no sufficiently grounded explanations, return local_terms:[].
+The glossary has AT MOST TWO sentences in total and stays separate from the
+five-point summary.
 If not enough verifiable details exist for 5 statements, return points:[].
 Do not infer eyewitness details or treat views as uncontested facts; attribute claims.
 Importance reflects the newsworthiness for residents, not headline sensationalism."""},
