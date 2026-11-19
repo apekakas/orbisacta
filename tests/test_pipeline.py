@@ -473,7 +473,7 @@ def test_mobile_country_buttons_wrap_and_zoom_works_on_all_language_pages():
         assert "data-globe-zoom=\"in\"" in page
         assert "data-globe-zoom=\"out\"" in page
         assert "selected.size<10" not in page
-        assert "slice(0,10)" not in page
+        assert "previousCountries=raw.filter(x=>x in names).slice(0,10)" not in page
         for country in flags:
             assert "'" + country.upper() + "'" in page
 
