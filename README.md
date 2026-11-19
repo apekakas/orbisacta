@@ -73,3 +73,42 @@ A `.env.example` csak sablon. Ne küldd el az API-kulcsot üzenetben, ne töltsd
 2. Éles OpenAI API-végpont-teszt minimális kerettel, forrásokra vonatkozó ellenőrzéssel.
 3. Nemzetközi hírpriorizálás több forrás alapján, minőség-ellenőrzés, kézi publikációs jóváhagyás és javítási folyamat.
 4. Automatizált szerveres működés és kattintható földgömb, max. 10 országos személyre szabott nézettel.
+
+
+## International v0.5
+
+A hat induló nyelv: magyar (hu), angol (en), spanyol (es), francia (fr),
+német (de), portugál (pt). A használható nyelvi útvonalak:
+`/hu/`, `/en/`, `/es/`, `/fr/`, `/de/`, `/pt/`.
+A kezdőoldalon a kézi nyelvválasztás elsőbbséget élvez, különben
+a böngésző beállított nyelvét használjuk; az ismeretlen nyelvek angolra
+állnak vissza. A döntéshez **nem kérünk le IP-címet**. Az IP-alapú
+országbecslést külön, adatvédelmi mérlegelés után lehet később
+hozzáadni. A nyelv a hírek földrajzi szűrésétől független.
+
+Az eredeti, ellenőrzött magyar hírek a korábbi `articles` táblában
+maradnak. A nemzetközi fordítások az `article_translations` SQLite
+táblába kerülnek, és időközönként `docs/news-en.json`,
+`news-es.json`, `news-fr.json`, `news-de.json`, illetve
+`news-pt.json` néven exportálódnak. Csak a minőségellenőrzésen
+átjutott fordításokat tesszük közzé; más nyelvű tartalmat nem
+címkézünk át automatikusan. Az egyes nyelveken emiatt
+kezdetben eltérő számú cikk lehet.
+
+A szerkesztőségi AI-ellenőrzés legfeljebb 10 cikket dolgoz fel futtatásonként.
+A külön fordítási keret legfeljebb 3 ellenőrzött cikk öt nyelvi
+változatának generálását engedi egy futásban, egyszerre egy
+API-kérésben cikkenként. A meglevő fordítások újrahasznosulnak.
+
+A `docs/ads-config.json` és a `data-ad-slot` jelölők csak
+**inaktív hirdetési helyeket** készítenek elő. Nincs betöltve AdSense,
+külső reklámhálózat, követőkód, helymeghatározás vagy CMP. Az éles
+hirdetésekhez külön jóváhagyás, hirdetési fiók, megfelelő
+hozzájáruláskezelés, adatvédelmi dokumentáció, ads.txt és
+szolgáltatói integráció szükséges.
+
+A GitHub Pages statikus tárhely. Automatikus IP-alapú
+nyelvfelismeréshez külön, jogszerű helymeghatározási réteg kell.
+A nyelvi SEO-végpontok a jelenlegi Pages-címen működnek, de a
+saját domainre átálláskor a kanonikus URL-eket és sitemapet
+aktualizálni kell.
