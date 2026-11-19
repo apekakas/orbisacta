@@ -54,14 +54,24 @@ footer{max-width:1100px;margin:auto;padding:25px 22px 50px;color:var(--sub);font
 @media(max-width:850px){.globe-panel{grid-template-columns:1fr}.globe-stage{min-height:auto}.globe-side{padding:12px 23px 23px}.globe-side h2{font-size:23px}.globe-map-note{bottom:8px}}
 @media(prefers-reduced-motion:reduce){.globe-panel *{transition:none!important}}
 
+.header-tools{display:flex;align-items:flex-end;flex-direction:column;gap:7px}
+.language-picker{display:flex;gap:9px;align-items:center;font-size:13px;font-weight:700;color:var(--ink)}
+.language-picker select{border:1px solid var(--line);padding:9px 12px;background:#fff;border-radius:9px;min-width:135px;cursor:pointer;font-size:13px}
+.language-picker select:focus-visible{outline:3px solid #69c9c2}
+.translation-note{color:var(--sub);font-size:12px;line-height:1.5;margin:12px 0}
+.ad-slot[hidden]{display:none!important}
+.ad-slot{margin:22px 0;border:1px solid var(--line);border-radius:10px}
+@media(max-width:680px){.header-tools{align-items:flex-end}.language-picker select{min-width:115px}.language-picker span{display:none}}
 </style>
 </head>
 <body>
-<header><img class="logoimg" src="./assets/logo-orbisacta.png" alt="OrbisActa"/><small>Nemzetközi hírek · Szerkesztőségi próbarendszer</small></header>
+<header><img class="logoimg" src="./assets/logo-orbisacta.png" alt="OrbisActa"/><div class="header-tools"><small>Nemzetközi hírek · Szerkesztőségi próbarendszer</small><label class="language-picker"><span>Nyelv</span><select id="language" aria-label="Nyelv"><option value="hu">Magyar</option><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option></select></label></div></header>
 <main>
   <div class="eyebrow">Világkép</div>
   <h1>A világ hírei, több ország nézőpontjából.</h1>
   <p class="lead">Válaszd ki az országokat és témákat. Az összefoglalókat csak a forrásanyag és a felhasználási jogok ellenőrzése után jelenítjük meg.</p>
+  <!-- Advertising placeholders are inactive. No ad network, tracking or cookies are loaded. -->
+  <div class="ad-slot" id="ad-top" data-ad-slot="top-banner" hidden aria-hidden="true"></div>
   <section class="globe-panel" aria-label="Interaktív földgömbös hírböngészés">
     <div id="globe-stage" class="globe-stage">
       <svg id="globe-map" viewBox="0 0 720 440" role="group" aria-label="Forgatható földgömb, országválasztó jelölőkkel"></svg>
@@ -86,42 +96,106 @@ footer{max-width:1100px;margin:auto;padding:25px 22px 50px;color:var(--sub);font
     <div><div class="group-label">Országok (legfeljebb 10)</div><div class="chips" id="countries"></div></div>
     <div><div class="group-label">Témakör</div><div class="chips" id="topics"></div></div>
   </section>
+  <p id="translation-note" class="translation-note"></p>
   <div class="meta"><div class="count" id="count">Hírek betöltése…</div><div class="sort-controls"><label for="sort">Rendezés</label><select id="sort"><option value="latest">Legfrissebb elöl</option><option value="importance">Legfontosabb elöl</option></select></div><div id="updated"></div></div>
   <section class="feed" id="feed" aria-live="polite"></section>
+  <div class="ad-slot" id="ad-in-feed" data-ad-slot="in-feed" hidden aria-hidden="true"></div>
 </main>
 <footer>OrbisActa · Fejlesztői prototípus. A géppel készített összefoglalók nem helyettesítik az eredeti cikket vagy az emberi szerkesztői ellenőrzést. Az adatforrásokra külön felhasználási és hivatkozási feltételek vonatkoznak.</footer>
 <script src="./assets/d3.v7.min.js"></script>
+<script src="./assets/i18n.js"></script>
 <script src="./assets/globe.js"></script>
 <script>
-const names={HU:'Magyarország',DE:'Németország',FR:'Franciaország',IT:'Olaszország',JP:'Japán',BR:'Brazília',US:'Egyesült Államok',GB:'Egyesült Királyság',EU:'Európai Unió',WORLD:'Világ'};
+const i18n=window.OrbisI18n;
+const currentLang=i18n.choose(window.ORBIS_PAGE_LANG);
+const tr=key=>i18n.t(currentLang,key);
+const names=Object.fromEntries(['HU','DE','FR','IT','JP','BR','US','GB','EU','WORLD'].map(code=>[code,i18n.name(currentLang,code)]));
 const topics=['Összes','politika','gazdaság','tudomány','sport','kultúra','egyéb'];
-let articles=[],internalItems=[],selected=new Set(Object.keys(names)),topic='Összes',sortOrder='latest';
+let previousCountries=[];
+try{const raw=JSON.parse(sessionStorage.getItem('orbisacta_countries')||'null');if(Array.isArray(raw))previousCountries=raw.filter(x=>x in names).slice(0,10)}catch(e){}
+let selected=new Set(previousCountries.length?previousCountries:Object.keys(names));
+let topic='Összes';
+try{const stored=sessionStorage.getItem('orbisacta_topic');if(topics.includes(stored))topic=stored}catch(e){}
+let articles=[],sortOrder='latest';
 const feed=document.getElementById('feed');
 let globeView=null;
-function btn(label,pressed,click){const b=document.createElement('button');b.className='chip';b.textContent=label;b.setAttribute('aria-pressed',String(pressed));b.onclick=click;return b}
-function renderControls(){const countryEl=document.getElementById('countries');countryEl.replaceChildren();
-countryEl.append(btn('Összes ország',selected.size===Object.keys(names).length,()=>{selected=new Set(Object.keys(names));renderControls();render()}));
-Object.entries(names).forEach(([code,name])=>{const total=articles.filter(a=>a.country===code).length;
-countryEl.append(btn(name+' ('+total+')',selected.has(code),()=>{if(selected.has(code))selected.delete(code);else if(selected.size<10)selected.add(code);renderControls();render()}))});
-const topicEl=document.getElementById('topics');topicEl.replaceChildren();topics.forEach(t=>topicEl.append(btn(t==='Összes'?t:t.charAt(0).toUpperCase()+t.slice(1),topic===t,()=>{topic=t;renderControls();render()})))}
-function el(tag,text,klass){const n=document.createElement(tag);if(text)n.textContent=text;if(klass)n.className=klass;return n}
-function render(){if(globeView)globeView.update(articles,selected);const visible=articles.filter(a=>selected.has(a.country)&&(topic==='Összes'||a.topic===topic)).sort((a,b)=>{
-const dateDiff=(Date.parse(b.published_utc)||0)-(Date.parse(a.published_utc)||0);
-return sortOrder==='importance' ? ((b.importance||0)-(a.importance||0))||dateDiff : dateDiff;
-});document.getElementById('count').textContent=visible.length+' ellenőrzött hír'+(visible.length!==articles.length?' a szűrés után':'');feed.replaceChildren();
-if(!visible.length){const box=el('div',null,'empty');box.append(el('strong','Nincs még hír a kiválasztott szűrőkhöz.'));
-box.append(el('p','Válassz másik országot vagy témát, vagy kattints az Összes ország gombra. Az új országok hírkínálata fokozatosan bővül.'));feed.append(box);return}
-for(const item of visible){const card=el('article');const top=el('div',null,'toprow');top.append(el('span',(names[item.country]||item.country)+' · '+item.topic));top.append(el('span',item.source_name||''));card.append(top);card.append(el('h2',item.title_hu));card.append(el('p',item.summary_hu));const publishedDate=item.published_utc?new Date(item.published_utc).toLocaleDateString('hu-HU',{year:'numeric',month:'long',day:'numeric'}):'';
-const credit=el('small',(publishedDate?publishedDate+' · ':'')+(item.author?item.author+' · ':'')+(item.source_name||'')+(item.license?' · '+item.license:'')+' · AI-val átdolgozott magyar összefoglaló');credit.style.cssText='color:#526575;line-height:1.55;font-size:12px';card.append(credit);const link=el('a','Eredeti hír és forrásmegjelölés');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';card.append(link);feed.append(card)}}
-function renderInternal(){const items=internalItems.filter(a=>selected.has(a.country)&&(topic==='Összes'||a.topic_hint===topic)).slice(0,24);if(!items.length)return;
-const label=el('div','BELSŐ RSS-TESZT: ÉLŐ FORRÁSOKBÓL GYŰJTÖTT, JOGILAG NEM PUBLIKÁLHATÓ CÍMSOROK','internal-label');label.style.cssText='grid-column:1/-1;color:#99601f;font-size:11px;font-weight:800;letter-spacing:.06em;margin-top:6px';feed.append(label);
-for(const item of items){const card=el('article');card.style.cssText='min-height:150px;background:#fffaf3;border-style:dashed';card.append(el('div',(names[item.country]||item.country)+' · '+item.source_name,'toprow'));card.append(el('h2',item.title_original));const link=el('a','Eredeti cikk (belső teszt)');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';card.append(link);feed.append(card)}
+i18n.apply(currentLang);
+function rememberFilters(){
+ try{sessionStorage.setItem('orbisacta_countries',JSON.stringify([...selected]));sessionStorage.setItem('orbisacta_topic',topic)}catch(e){}
 }
-async function init(){renderControls();try{const res=await fetch('./news.json',{cache:'no-store'});if(!res.ok)throw new Error('missing news.json');const data=await res.json();articles=Array.isArray(data.articles)?data.articles:[];
-document.getElementById('updated').textContent='Frissítve: '+(data.generated_utc?new Date(data.generated_utc).toLocaleString('hu-HU'):'—')}catch(e){document.getElementById('updated').textContent='A híradat még nem készült el.'}try{const r=await fetch('./internal-preview.json',{cache:'no-store'});if(r.ok){const raw=await r.json();internalItems=raw.internal_only?raw.items:[]}}catch(e){}renderControls();render()}document.getElementById('sort').addEventListener('change',e=>{sortOrder=e.target.value;render()});
+function btn(label,pressed,click){const b=document.createElement('button');b.className='chip';b.textContent=label;b.setAttribute('aria-pressed',String(pressed));b.onclick=click;return b}
+function renderControls(){
+ const countryEl=document.getElementById('countries');countryEl.replaceChildren();
+ countryEl.append(btn(tr('allCountries'),selected.size===Object.keys(names).length,()=>{
+  selected=new Set(Object.keys(names));renderControls();render()
+ }));
+ Object.entries(names).forEach(([code,name])=>{
+  const total=articles.filter(a=>a.country===code).length;
+  countryEl.append(btn(name+' ('+total+')',selected.has(code),()=>{
+   if(selected.has(code))selected.delete(code);else if(selected.size<10)selected.add(code);
+   renderControls();render();
+  }));
+ });
+ const topicEl=document.getElementById('topics');topicEl.replaceChildren();
+ topics.forEach(code=>{
+  const label=code==='Összes'?tr('allTopics'):tr('topics')[code];
+  topicEl.append(btn(label,topic===code,()=>{topic=code;renderControls();render()}));
+ });
+ rememberFilters();
+}
+function el(tag,text,klass){const n=document.createElement(tag);if(text!==null&&text!==undefined)n.textContent=text;if(klass)n.className=klass;return n}
+function render(){
+ if(globeView)globeView.update(articles,selected);
+ const visible=articles.filter(a=>selected.has(a.country)&&(topic==='Összes'||a.topic===topic)).sort((a,b)=>{
+  const dateDiff=(Date.parse(b.published_utc)||0)-(Date.parse(a.published_utc)||0);
+  return sortOrder==='importance'?((b.importance||0)-(a.importance||0))||dateDiff:dateDiff;
+ });
+ document.getElementById('count').textContent=visible.length+' '+tr('count')+(visible.length!==articles.length?' · '+tr('filtered'):'');
+ feed.replaceChildren();
+ if(!visible.length){
+  const box=el('div',null,'empty');
+  box.append(el('strong',tr('emptyTitle')));box.append(el('p',tr('emptyText')));
+  feed.append(box);return;
+ }
+ for(const item of visible){
+  const card=el('article'),top=el('div',null,'toprow');
+  top.append(el('span',(names[item.country]||item.country)+' · '+(tr('topics')[item.topic]||item.topic)));
+  top.append(el('span',item.source_name||''));card.append(top);
+  card.append(el('h2',item.title_hu));card.append(el('p',item.summary_hu));
+  const publishedDate=item.published_utc?new Date(item.published_utc).toLocaleDateString(currentLang==='pt'?'pt-BR':currentLang,{year:'numeric',month:'long',day:'numeric'}):'';
+  const credit=el('small',(publishedDate?publishedDate+' · ':'')+(item.author?item.author+' · ':'')+(item.source_name||'')+(item.license?' · '+item.license:'')+' · '+tr('credit'));
+  credit.style.cssText='color:#526575;line-height:1.55;font-size:12px';
+  card.append(credit);
+  const link=el('a',tr('sourceLink'));link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';card.append(link);
+  feed.append(card);
+ }
+}
+async function init(){
+ renderControls();
+ try{
+  const filename=currentLang==='hu'?'news.json':'news-'+currentLang+'.json';
+  const res=await fetch('./'+filename,{cache:'no-store'});
+  if(!res.ok)throw new Error('Missing '+filename);
+  const data=await res.json();
+  articles=Array.isArray(data.articles)?data.articles:[];
+  document.getElementById('updated').textContent=tr('updated')+': '+(data.generated_utc?new Date(data.generated_utc).toLocaleString(currentLang==='pt'?'pt-BR':currentLang):'—');
+ }catch(e){document.getElementById('updated').textContent=tr('loadError')}
+ renderControls();render();
+}
+document.getElementById('sort').addEventListener('change',e=>{sortOrder=e.target.value;render()});
+document.getElementById('language').addEventListener('change',e=>{
+ const chosen=e.target.value;
+ if(!i18n.locales[chosen])return;
+ i18n.remember(chosen);
+ window.location.assign(new URL('./'+chosen+'/',document.baseURI).href);
+});
 globeView=window.OrbisGlobe&&window.OrbisGlobe.mount({
-  onCountry:code=>{selected=new Set([code]);renderControls();render();document.querySelector('.filters').scrollIntoView({behavior:'smooth',block:'nearest'})},
-  onReset:()=>{selected=new Set(Object.keys(names));topic='Összes';renderControls();render()}
+ translate:tr,countryName:code=>names[code]||code,
+ onCountry:code=>{
+  selected=new Set([code]);renderControls();render();
+  document.querySelector('.filters').scrollIntoView({behavior:'smooth',block:'nearest'});
+ },
+ onReset:()=>{selected=new Set(Object.keys(names));topic='Összes';renderControls();render()}
 });
 init();
 </script>
