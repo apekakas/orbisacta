@@ -43,9 +43,16 @@ function mount(options){
  }
  const d3=window.d3;
  let center=[12,47],scale=192,land=null,items=[],active=new Set();
- const minScale=125,maxScale=360;
+ const minScale=110,maxScale=560;
  const clampZoom=value=>Math.max(minScale,Math.min(maxScale,value));
- function zoomBy(factor){scale=clampZoom(scale*factor);redraw()}
+ function zoomBy(factor){
+   scale=clampZoom(scale*factor);
+   redraw();
+ }
+ function updateZoomStatus(){
+   const indicator=document.getElementById("globe-zoom-level");
+   if(indicator)indicator.textContent=Math.round(scale/192*100)+"%";
+ }
  const projection=d3.geoOrthographic().scale(scale).translate([360,218]).rotate([-center[0],-center[1]]).clipAngle(90).precision(0.75);
  const path=d3.geoPath(projection);
  const sphere={type:"Sphere"};
@@ -81,6 +88,7 @@ function mount(options){
    landPath.setAttribute("d",land?path(land):"");
    border.setAttribute("d",earth);
    glow.setAttribute("r",scale+17);
+   updateZoomStatus();
    for(const [code,loc] of Object.entries(locations)){
      const d=markerNodes[code],visible=d3.geoDistance(loc.coord,center)<Math.PI/2-.025;
      d.group.style.display=visible?"":"none";
@@ -124,6 +132,8 @@ function mount(options){
    return pair.length<2?0:Math.hypot(pair[0].x-pair[1].x,pair[0].y-pair[1].y);
  };
  svg.addEventListener("pointerdown",ev=>{
+   // Mobile touch uses Touch Events for consistent multi-touch support.
+   if(ev.pointerType==="touch")return;
    if(ev.pointerType==="mouse"&&ev.button!==0)return;
    if(ev.target.closest(".globe-pin")&&pointers.size===0)return;
    pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
@@ -132,7 +142,7 @@ function mount(options){
    svg.classList.add("dragging");
  });
  svg.addEventListener("pointermove",ev=>{
-   if(!pointers.has(ev.pointerId))return;
+   if(ev.pointerType==="touch"||!pointers.has(ev.pointerId))return;
    const prior=pointers.get(ev.pointerId);
    pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
    if(pointers.size>=2){
@@ -150,7 +160,7 @@ function mount(options){
    redraw();
  });
  const stopPointer=ev=>{
-   if(!pointers.has(ev.pointerId))return;
+   if(ev.pointerType==="touch"||!pointers.has(ev.pointerId))return;
    pointers.delete(ev.pointerId);
    pinchDistance=pointers.size>=2?distance():0;
    if(pointers.size===0)svg.classList.remove("dragging");
@@ -158,11 +168,53 @@ function mount(options){
  svg.addEventListener("pointerup",stopPointer);
  svg.addEventListener("pointercancel",stopPointer);
  svg.addEventListener("lostpointercapture",stopPointer);
+
+ // Safari and other mobile browsers provide reliable native touch events.
+ // This path also handles pinch when PointerEvent capture is not supported.
+ let touchState=null;
+ const touchGap=touches=>touches.length<2?0:
+   Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
+ svg.addEventListener("touchstart",ev=>{
+   if(ev.touches.length>=2){
+     touchState={kind:"pinch",distance:touchGap(ev.touches)};
+   }else if(ev.touches.length===1){
+     if(ev.target.closest(".globe-pin"))return;
+     touchState={kind:"rotate",x:ev.touches[0].clientX,y:ev.touches[0].clientY};
+   }
+ },{passive:false});
+ svg.addEventListener("touchmove",ev=>{
+   if(!touchState)return;
+   if(ev.touches.length>=2){
+     ev.preventDefault();
+     const next=touchGap(ev.touches);
+     if(touchState.kind==="pinch"&&touchState.distance>5&&next>5){
+       zoomBy(next/touchState.distance);
+     }
+     touchState={kind:"pinch",distance:next};
+   }else if(ev.touches.length===1){
+     ev.preventDefault();
+     const x=ev.touches[0].clientX,y=ev.touches[0].clientY;
+     if(touchState.kind==="rotate"){
+       const ratio=720/Math.max(svg.getBoundingClientRect().width,1);
+       center=[center[0]+(touchState.x-x)*ratio*.28,
+         Math.max(-75,Math.min(75,center[1]+(y-touchState.y)*ratio*.28))];
+       redraw();
+     }
+     touchState={kind:"rotate",x,y};
+   }
+ },{passive:false});
+ svg.addEventListener("touchend",ev=>{
+   if(ev.touches.length===0)touchState=null;
+   else if(ev.touches.length===1)touchState={
+     kind:"rotate",x:ev.touches[0].clientX,y:ev.touches[0].clientY};
+   else touchState={kind:"pinch",distance:touchGap(ev.touches)};
+ },{passive:false});
+ svg.addEventListener("touchcancel",()=>{touchState=null},{passive:false});
  svg.addEventListener("wheel",ev=>{
    ev.preventDefault();zoomBy(ev.deltaY<0?1.12:1/1.12);
  },{passive:false});
  document.querySelectorAll("[data-globe-zoom]").forEach(button=>{
-   button.addEventListener("click",()=>zoomBy(button.dataset.globeZoom==="in"?1.25:1/1.25));
+   button.addEventListener("click",()=>zoomBy(button.dataset.globeZoom==="in"?1.4:1/1.4));
  });
  svg.setAttribute("tabindex","0");
  svg.addEventListener("keydown",ev=>{
