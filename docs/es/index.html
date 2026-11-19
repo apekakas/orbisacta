@@ -305,6 +305,51 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
  .archive-controls input[type=date]{flex:1;min-width:0}
 }
 
+
+/* Public aggregate editorial coverage; collapsed until requested. */
+.quality-section{margin:18px 0 23px}
+.quality-panel{border:1px solid #cadfd8;border-radius:14px;background:#f7fbfa;overflow:hidden}
+.quality-toggle{list-style:none;display:flex;align-items:center;gap:9px;padding:14px 17px;cursor:pointer;color:#19464a;font-size:13px}
+.quality-toggle::-webkit-details-marker{display:none}
+.quality-toggle::marker{content:""}
+.quality-toggle:focus-visible{outline:3px solid #77c7b9;outline-offset:-3px}
+.quality-toggle:hover{background:#eef7f4}
+#quality-heading{font-weight:800}
+#quality-subtitle{margin-left:auto;color:#647b78;font-size:11px}
+.quality-chevron{font-size:18px;line-height:1;color:#49756b}
+.quality-panel[open] .quality-chevron{transform:rotate(180deg)}
+.quality-body{padding:14px 17px 19px;border-top:1px solid #d5e6df;background:#fff}
+.quality-period{margin:2px 0 9px;color:#4a6b6b;font-size:12px}
+#quality-loading{font-size:12px;color:#497069;min-height:0;margin:6px 0}
+.quality-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:11px 0 19px}
+.quality-metric{background:#f3f8f7;border:1px solid #dae9e4;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.quality-metric span{font-size:11px;color:#54746d;line-height:1.3}
+.quality-metric strong{font-size:22px;color:#174c4c;line-height:1.2;font-variant-numeric:tabular-nums}
+.quality-grid{display:grid;grid-template-columns:1fr;gap:15px}
+.quality-grid section{min-width:0}
+.quality-grid h3{margin:0 0 8px;font-size:14px;color:#1b4c4f}
+.quality-table-scroll{max-width:100%;overflow-x:auto;border:1px solid #dce6e4;border-radius:10px;background:white}
+.quality-table-scroll:focus-visible{outline:3px solid #77c7b9;outline-offset:2px}
+.quality-table{border-collapse:collapse;font-size:12px;width:100%;min-width:630px}
+.quality-table th,.quality-table td{padding:9px 11px;border-bottom:1px solid #e8efec;text-align:left}
+.quality-table thead th{background:#eef6f2;color:#335e59;font-size:10.5px;line-height:1.3;font-weight:800}
+.quality-table tbody th{font-weight:700;color:#25494e;white-space:nowrap}
+.quality-table tbody tr:last-child>*{border-bottom:none}
+.quality-table tbody tr:nth-child(even){background:#fafcfc}
+.quality-table .quality-number{text-align:right;font-variant-numeric:tabular-nums}
+.quality-empty-row{color:#94a4a4;opacity:.72}
+.quality-method{margin:14px 1px 0;color:#60736f;font-size:11px;line-height:1.65}
+@media(max-width:680px){
+ .quality-toggle{flex-wrap:wrap;gap:7px;padding:12px}
+ #quality-heading{font-size:12.5px}
+ #quality-subtitle{flex-basis:100%;margin-left:26px;font-size:10px}
+ .quality-chevron{margin-left:auto}
+ .quality-body{padding:12px}
+ .quality-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .quality-metric strong{font-size:21px}
+ .quality-table{font-size:11.5px}
+}
+
 </style>
 </head>
 <body>
@@ -367,6 +412,21 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
     <span id="archive-hint" class="archive-hint">Az elmúlt 7 nap · UTC</span>
   </section>
   <div class="meta"><div class="count" id="count">Hírek betöltése…</div><div class="sort-controls"><label for="sort">Rendezés</label><select id="sort"><option value="featured">Ajánlott · friss és fontos</option><option value="latest">Legfrissebb elöl</option><option value="importance">Legfontosabb elöl</option></select></div><div id="updated"></div></div>
+  <section class="quality-section" aria-label="Hírminőségi statisztikák">
+    <details id="quality-panel" class="quality-panel">
+      <summary class="quality-toggle"><span aria-hidden="true">📊</span><span id="quality-heading">Hírellátottság és tartalmi mutatók</span><span id="quality-subtitle">Áttekintés az elmúlt 7 napról</span><span class="quality-chevron" aria-hidden="true">⌄</span></summary>
+      <div class="quality-body">
+        <p class="quality-period" id="quality-date"></p>
+        <p id="quality-loading" role="status" aria-live="polite"></p>
+        <div class="quality-stats" id="quality-stats"></div>
+        <div class="quality-grid">
+          <section><h3 id="quality-country-title">Országok szerint</h3><div id="quality-country-table"></div></section>
+          <section><h3 id="quality-topic-title">Témakörök szerint</h3><div id="quality-topic-table"></div></section>
+        </div>
+        <p class="quality-method" id="quality-method"></p>
+      </div>
+    </details>
+  </section>
   <section class="feed" id="feed" aria-live="polite"></section>
   <div class="ad-slot" id="ad-in-feed" data-ad-slot="in-feed" hidden aria-hidden="true"></div>
 </main>
@@ -375,6 +435,7 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
 <script src="./assets/d3.v7.min.js"></script>
 <script src="./assets/i18n.js"></script>
 <script src="./assets/globe.js"></script>
+<script src="./assets/quality-dashboard.js"></script>
 <script>
 const i18n=window.OrbisI18n;
 const currentLang=i18n.choose(window.ORBIS_PAGE_LANG);
