@@ -88,6 +88,30 @@ def check_numeric_facts(source_text, points):
     return True, "ok"
 
 
+
+# Reject vague text about the existence of an article instead of the news itself.
+# Attributions such as "A jelentés szerint..." remain acceptable.
+META_REPORTING = re.compile(
+    r"^\s*(?:a|az|egy)\s+(?:cikk|hír|írás|tanulmány|jelentés|"
+    r"beszámoló|közlemény|publikáció)\s+"
+    r"(?:bemutatja|ismerteti|részletezi|áttekinti|összefoglalja|"
+    r"ismertet|foglalkozik|vizsgálja)\b",
+    re.IGNORECASE,
+)
+
+
+def check_editorial_points(points):
+    """Prefer concrete reported developments over self-referential filler."""
+    if not isinstance(points, list) or len(points) != 5:
+        return False, "five_editorial_points_required"
+    for index, point in enumerate(points, 1):
+        if not isinstance(point, dict):
+            return False, f"point_{index}_is_not_an_object"
+        statement = str(point.get("sentence_hu", "")).strip()
+        if META_REPORTING.match(statement):
+            return False, f"point_{index}_meta_description_without_news"
+    return True, "ok"
+
 def validated_background(source_text, terms):
     """Return at most two one-sentence explanations of unfamiliar terms.
 
@@ -100,7 +124,9 @@ def validated_background(source_text, terms):
         return ""
     source = re.sub(r"\s+", " ", unicodedata.normalize("NFKC", source_text or "")).lower()
     sentences, seen = [], set()
-    for entry in terms[:2]:
+    for entry in terms[:6]:
+        if len(sentences) == 2:
+            break
         if not isinstance(entry, dict):
             continue
         term = str(entry.get("term_original", "")).strip()

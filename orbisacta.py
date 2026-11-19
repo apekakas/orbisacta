@@ -37,6 +37,19 @@ def now_utc():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def archive_window(at=None):
+    """Seven UTC calendar dates, including today; no date range selection."""
+    current = (at or datetime.now(timezone.utc)).astimezone(timezone.utc).date()
+    first = current - timedelta(days=6)
+    return {
+        "days": 7,
+        "timezone": "UTC",
+        "start_date": first.isoformat(),
+        "end_date": current.isoformat(),
+        "cutoff_utc": first.isoformat() + "T00:00:00+00:00",
+    }
+
+
 def normalize_title(value: str) -> str:
     value = unicodedata.normalize("NFKC", value).lower()
     return re.sub(r"[^\w]+", " ", value, flags=re.UNICODE).strip()
@@ -278,6 +291,13 @@ For WORLD feeds, country_relevant may be true for any country and event_country
 should indicate the main affected country only if unmistakable, else WORLD.
 For EU feeds, country_relevant means a story principally about the European Union.
 Include source viewpoints as attributed statements, not independent verified facts.
+Write an actual NEWS BRIEF, not a review of a news article. Start with
+what happened, what changed or what was found, who was affected, and when.
+Never waste a sentence on "A cikk bemutatja", "A tanulmány ismerteti",
+"A jelentés vizsgálja" or other meta-commentary about the publication.
+All five sentences must contain distinct, directly evidenced developments,
+decisions, results, impacts or relevant context, avoiding repetitive filler.
+Attribute disputed interpretations and claims to their sources.
 When an article reports quantitative findings, prominently include its
 most important figures instead of vaguely describing the topic. If TWO or
 more substantive statistics exist, reproduce at least TWO DISTINCT figures
@@ -409,8 +429,11 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
                 valid, reason = check_evidence(text, result.get("points", []))
                 if not valid:
                     raise ValueError(reason)
-                from editorial_quality import check_numeric_facts
+                from editorial_quality import check_numeric_facts, check_editorial_points
                 valid, reason = check_numeric_facts(text, result.get("points", []))
+                if not valid:
+                    raise ValueError(reason)
+                valid, reason = check_editorial_points(result.get("points", []))
                 if not valid:
                     raise ValueError(reason)
                 status, err = "published", ""
@@ -444,16 +467,18 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
 
 
 def export_json(con, destination: Path = PUBLISH_PATH):
-    """Export only validated summaries from the last 30 days to avoid stale news.
+    """Export source-dated news from the latest seven UTC calendar days.
 
     Importantly: the quoted source evidence is never republished; attribution is.
     """
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat(timespec='seconds')
+    archive = archive_window()
+    cutoff = archive["cutoff_utc"]
     rows = con.execute("""SELECT id, country, topic, source_name, author, license, license_url,
           rights_reference_url, title_hu, url, published_utc, summary_hu, context_hu AS context_text, importance FROM articles WHERE status='published'
           AND published_utc >= ?
           ORDER BY importance DESC, published_utc DESC LIMIT 400""", (cutoff,)).fetchall()
     payload = {"project": "OrbisActa", "generated_utc": now_utc(),
+               "archive": archive,
                "countries": COUNTRIES, "topics": list(TOPICS),
                "articles": [dict(r) for r in rows], "count": len(rows),
                "notice": "AI-based Hungarian summaries, adapted from attributed source text. No original photos. Open original for context."}

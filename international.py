@@ -149,7 +149,7 @@ def translate_pending(con, limit=3, model="gpt-4o-mini"):
 def export_languages(con, base_payload, target_folder):
     """Publish only approved translated articles; no undisclosed HU fallback."""
     target_folder = Path(target_folder)
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat(timespec="seconds")
+    cutoff = base_payload["archive"]["cutoff_utc"]
     counts = {}
     for lang in TARGET_LANGUAGES:
         rows = con.execute("""SELECT a.id, a.country, a.topic, a.source_name,
