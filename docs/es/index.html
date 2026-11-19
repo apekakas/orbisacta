@@ -149,6 +149,33 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
 .article-context p{font-size:13px;line-height:1.55;color:#264749;margin:0}
 @media(max-width:680px){.article-context{padding:11px 12px}.article-context p{font-size:13px}}
 
+
+/* Mobile: country and topic filters wrap into a true grid, never clip sideways. */
+.filters>div{min-width:0}
+.globe-zoom-controls{position:absolute;right:15px;bottom:15px;z-index:3;display:flex;flex-direction:column;gap:7px}
+.globe-zoom-controls button{appearance:none;width:39px;height:39px;border:1px solid rgba(224,252,245,.58);
+ border-radius:11px;background:rgba(9,42,55,.89);color:#fff;font-size:22px;line-height:1;
+ display:grid;place-items:center;cursor:pointer;touch-action:manipulation;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+.globe-zoom-controls button:hover{background:#126e6b}
+.globe-zoom-controls button:focus-visible{outline:3px solid #e2c17e;outline-offset:2px}
+@media(max-width:680px){
+ html,body{max-width:100%}
+ .filters{min-width:0}
+ .filters>div{min-width:0}
+ .filters #countries,.filters #topics{display:grid;overflow:visible;overscroll-behavior:auto;
+  scrollbar-width:auto;scroll-snap-type:none;padding:2px 0;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .filters #countries button.chip,.filters #topics button.chip{
+  min-width:0;max-width:100%;width:100%;min-height:48px;line-height:1.3;white-space:normal;overflow-wrap:anywhere;
+  text-align:left;justify-content:flex-start;padding:9px 10px;scroll-snap-align:none;font-size:12px}
+ .filters #countries button.chip:first-child{grid-column:1/-1;justify-content:center}
+ .filters #topics{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .filters #topics button.chip{font-size:11.5px;justify-content:center;text-align:center}
+ .globe-zoom-controls{right:10px;bottom:9px;gap:5px}
+ .globe-zoom-controls button{width:42px;height:42px}
+ .globe-map-note{max-width:calc(100% - 80px);line-height:1.4}
+}
+@media(max-width:370px){.filters #topics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 </style>
 </head>
 <body>
@@ -172,6 +199,7 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
   <section class="globe-panel" id="globe-section" aria-label="Interaktív földgömbös hírböngészés">
     <div id="globe-stage" class="globe-stage">
       <svg id="globe-map" viewBox="0 0 720 440" role="group" aria-label="Forgatható földgömb, országválasztó jelölőkkel"></svg>
+      <div class="globe-zoom-controls" role="group" aria-label="Földgömb nagyítása"><button type="button" data-globe-zoom="in" aria-label="Nagyítás" title="Nagyítás">+</button><button type="button" data-globe-zoom="out" aria-label="Kicsinyítés" title="Kicsinyítés">−</button></div>
       <div class="globe-map-note">Húzd a forgatáshoz · Görgess a nagyításhoz · Kattints az országra</div>
     </div>
     <div class="globe-side">
@@ -184,13 +212,15 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
         <button type="button" class="globe-place" data-globe-focus="europe">Európa</button>
         <button type="button" class="globe-place" data-globe-focus="america">Amerika</button>
         <button type="button" class="globe-place" data-globe-focus="asia">Ázsia</button>
+        <button type="button" class="globe-place" data-globe-focus="africa">Afrika</button>
+        <button type="button" class="globe-place" data-globe-focus="oceania">Óceánia</button>
         <button type="button" class="globe-reset" id="globe-reset">Összes hír</button>
       </div>
     </div>
   </section>
   <p class="globe-source-note">Térképi alapadatok: Natural Earth (közkincs). A jelölők tájékoztató jellegűek, nem országhatár-kijelölések.</p>
   <section class="filters" aria-label="Hírszűrők">
-    <div><div class="group-label">Országok (legfeljebb 10)</div><div class="chips" id="countries"></div></div>
+    <div><div class="group-label">Országok</div><div class="chips" id="countries"></div></div>
     <div><div class="group-label">Témakör</div><div class="chips" id="topics"></div></div>
   </section>
   <p id="translation-note" class="translation-note"></p>
@@ -207,13 +237,18 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
 const i18n=window.OrbisI18n;
 const currentLang=i18n.choose(window.ORBIS_PAGE_LANG);
 const tr=key=>i18n.t(currentLang,key);
-const names=Object.fromEntries(['HU','DE','FR','IT','JP','BR','US','GB','EU','WORLD'].map(code=>[code,i18n.name(currentLang,code)]));
+const names=Object.fromEntries(['HU','DE','FR','IT','JP','BR','IN','CN','AU','SA','NG','ZA','US','GB','EU','WORLD'].map(code=>[code,i18n.name(currentLang,code)]));
 const topics=['Összes','politika','gazdaság','tudomány','sport','kultúra','egyéb'];
-const countryFlagAssets={HU:'hu',DE:'de',FR:'fr',IT:'it',JP:'jp',BR:'br',US:'us',GB:'gb',EU:'eu'};
+const countryFlagAssets={HU:'hu',DE:'de',FR:'fr',IT:'it',JP:'jp',BR:'br',IN:'in',CN:'cn',AU:'au',SA:'sa',NG:'ng',ZA:'za',US:'us',GB:'gb',EU:'eu'};
 const countryAlphabet=new Intl.Collator(currentLang==='pt'?'pt-BR':currentLang,{usage:'sort',sensitivity:'base'});
 const topicIcons={politika:'🏛️',gazdaság:'📈',tudomány:'🔬',sport:'⚽',kultúra:'🎭',egyéb:'📰'};
 let previousCountries=[];
-try{const raw=JSON.parse(sessionStorage.getItem('orbisacta_countries')||'null');if(Array.isArray(raw))previousCountries=raw.filter(x=>x in names).slice(0,10)}catch(e){}
+try{
+ const raw=JSON.parse(sessionStorage.getItem('orbisacta_countries')||'null');
+ if(Array.isArray(raw))previousCountries=raw.filter(code=>code in names);
+ const formerlyAll=['HU','DE','FR','IT','JP','BR','US','GB','EU','WORLD'];
+ if(formerlyAll.every(code=>previousCountries.includes(code)))previousCountries=[];
+}catch(e){}
 let selected=new Set(previousCountries.length?previousCountries:Object.keys(names));
 let topic='Összes';
 try{const stored=sessionStorage.getItem('orbisacta_topic');if(topics.includes(stored))topic=stored}catch(e){}
@@ -233,7 +268,7 @@ function renderControls(){
  Object.entries(names).sort((a,b)=>countryAlphabet.compare(a[1],b[1])||a[0].localeCompare(b[0])).forEach(([code,name])=>{
   const total=articles.filter(a=>a.country===code).length;
   const button=btn(name+' ('+total+')',selected.has(code),()=>{
-   if(selected.has(code))selected.delete(code);else if(selected.size<10)selected.add(code);
+   if(selected.has(code))selected.delete(code);else selected.add(code);
    renderControls();render();
   });
   if(countryFlagAssets[code]){
