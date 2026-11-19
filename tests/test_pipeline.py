@@ -521,6 +521,6 @@ def test_globe_native_multitouch_and_obvious_mobile_zoom_controls():
     assert 'svg.addEventListener("touchend"' in globe
     assert "ev.preventDefault()" in globe
     assert "touchGap(ev.touches)" in globe
-    assert 'const initialScale=window.matchMedia("(max-width:680px)").matches?255:192;' in globe
+    assert 'const initialScale=window.matchMedia("(max-width:680px)").matches?205:192;' in globe
     assert 'button.dataset.globeZoom==="in"?1.4:1/1.4' in globe
     assert 'document.getElementById("globe-zoom-level")' in globe

@@ -42,7 +42,7 @@ function mount(options){
    return {update:()=>{},focus:()=>{}};
  }
  const d3=window.d3;
- const initialScale=window.matchMedia("(max-width:680px)").matches?255:192;
+ const initialScale=window.matchMedia("(max-width:680px)").matches?205:192;
  let center=[12,47],scale=initialScale,land=null,items=[],active=new Set();
  const minScale=110,maxScale=560;
  const clampZoom=value=>Math.max(minScale,Math.min(maxScale,value));
