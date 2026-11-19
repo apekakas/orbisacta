@@ -141,6 +141,14 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
 }
 @media(max-width:360px){.language-menu summary{min-width:105px}}
 
+
+/* Glossary notes are distinct from the five-sentence news summary. */
+.article-context{border-left:3px solid #198b80;border-radius:0 9px 9px 0;background:#f3faf8;
+ padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.article-context strong{font-size:12px;color:#0c5a53;font-weight:800;letter-spacing:.015em}
+.article-context p{font-size:13px;line-height:1.55;color:#264749;margin:0}
+@media(max-width:680px){.article-context{padding:11px 12px}.article-context p{font-size:13px}}
+
 </style>
 </head>
 <body>
@@ -279,6 +287,12 @@ function render(){
   top.append(el('span',(names[item.country]||item.country)+' · '+(tr('topics')[item.topic]||item.topic)));
   top.append(el('span',item.source_name||''));card.append(top);
   card.append(el('h2',item.title_hu));card.append(el('p',item.summary_hu));
+  if(typeof item.context_text==='string'&&item.context_text.trim()){
+   const context=el('aside',null,'article-context');
+   context.append(el('strong',tr('backgroundTitle')));
+   context.append(el('p',item.context_text));
+   card.append(context);
+  }
   const publishedDate=item.published_utc?new Date(item.published_utc).toLocaleDateString(currentLang==='pt'?'pt-BR':currentLang,{year:'numeric',month:'long',day:'numeric'}):'';
   const credit=el('small',(publishedDate?publishedDate+' · ':'')+(item.author?item.author+' · ':'')+(item.source_name||'')+(item.license?' · '+item.license:'')+' · '+tr('credit'));
   credit.style.cssText='color:#526575;line-height:1.55;font-size:12px';
