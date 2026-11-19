@@ -26,6 +26,8 @@ def classify(message: str) -> str:
         ("duplicate_sentence", "Ismétlődő mondat"),
         ("bad_sentence", "Érvénytelen mondatforma"),
         ("invalid_topic", "Nem megfelelő témakör"),
+        ("two_evidenced_numeric_facts_required", "Két fontos számadat nem igazolható"),
+        ("meta_description_without_news", "A hír helyett a cikket ismertető mondat"),
         ("ratelimiterror", "API korlát/kvóta"),
         ("insufficient_quota", "API kvóta hiánya"),
         ("authenticationerror", "API hitelesítés"),

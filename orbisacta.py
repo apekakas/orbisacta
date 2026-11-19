@@ -487,6 +487,12 @@ def export_json(con, destination: Path = PUBLISH_PATH):
     destination.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     from international import export_languages
     export_languages(con, payload, destination.parent)
+    # Public editorial metrics reuse already approved Hungarian summaries.
+    # No additional source fetching or AI requests.
+    from quality_metrics import export_quality_report
+    export_quality_report(
+        payload["articles"], COUNTRIES, list(TOPICS), archive,
+        payload["generated_utc"], destination.parent / "quality.json")
     return len(rows)
 
 

@@ -52,6 +52,7 @@ jobs:
           test -f docs/index.html
           test -f docs/news.json
           test -f docs/site-status.json
+          test -f docs/quality.json
           test ! -e docs/internal-preview.json
       - name: GitHub Pages előkészítés
         uses: actions/configure-pages@v5
