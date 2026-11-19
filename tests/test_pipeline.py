@@ -496,11 +496,16 @@ def test_compact_filter_panels_and_language_names_across_six_locales():
     root = Path(__file__).resolve().parents[1] / "docs"
     for lang in ("hu", "en", "es", "fr", "de", "pt"):
         page = (root / lang / "index.html").read_text(encoding="utf-8")
-        assert '<details class="filters-panel" id="filters-panel">' in page
-        assert 'id="filters-title"' in page
-        assert 'id="filter-current"' in page
+        assert '<details class="filters-panel" id="country-panel">' in page
+        assert '<details class="filters-panel" id="topic-panel">' in page
+        assert 'id="country-title"' in page
+        assert 'id="topic-title"' in page
+        assert 'id="country-current"' in page
+        assert 'id="topic-current"' in page
         assert 'id="show-news"' in page
-        assert "filtersPanel.open=false;" in page
+        assert "countryPanel.open=false;topicPanel.open=false;" in page
+        assert 'id="archive-date"' in page
+        assert 'id="archive-all"' in page
         assert "id=\"current-language-name\"" in page
         assert ".language-picker span{display:none}" not in page
         assert "#current-language-name{display:inline!important" in page
@@ -571,3 +576,97 @@ def test_editorial_glossary_covers_unfamiliar_terms_without_added_ai_calls():
     assert "source_text must explicitly contain the term" in backend
     assert "AT MOST TWO sentences" in backend
     assert "--max-translations" in backend
+
+
+def test_editorial_quality_rejects_meta_article_descriptions():
+    from editorial_quality import check_editorial_points
+    statements = [
+        {"sentence_hu":"A munkanélküliségi ráta 4,6 százalékra változott a vizsgált időszakban."},
+        {"sentence_hu":"A foglalkoztatás 72,3 százalékon állt az országban."},
+        {"sentence_hu":"A hivatal a korábbi évhez viszonyította az adatokat."},
+        {"sentence_hu":"A gazdasági tárca közzétette a részletes adatokat."},
+        {"sentence_hu":"Az eredményeket novemberben jelentették be."},
+    ]
+    assert check_editorial_points(statements) == (True, "ok")
+    weak = statements[:]
+    weak[2] = {"sentence_hu":"A cikk bemutatja a foglalkoztatási statisztikákat."}
+    assert check_editorial_points(weak)[0] is False
+    weak[2] = {"sentence_hu":"A tanulmány ismerteti a gazdasági folyamatokat."}
+    assert check_editorial_points(weak)[0] is False
+    weak[2] = {"sentence_hu":"A hivatal szerint az infláció lassult a vizsgált évben."}
+    assert check_editorial_points(weak)[0] is True
+
+
+def test_seven_calendar_day_utc_archive_window_is_inclusive():
+    from datetime import datetime, timezone
+    moment=datetime(2026, 11, 19, 23, 55, tzinfo=timezone.utc)
+    window=oa.archive_window(moment)
+    assert window == {
+        "days":7, "timezone":"UTC", "start_date":"2026-11-13",
+        "end_date":"2026-11-19", "cutoff_utc":"2026-11-13T00:00:00+00:00"
+    }
+    moment=datetime(2026, 11, 19, 0, 5, tzinfo=timezone.utc)
+    assert oa.archive_window(moment)["start_date"] == "2026-11-13"
+
+
+def test_export_archive_hides_eighth_day_but_keeps_7th_and_multilingual(tmp_path):
+    from datetime import datetime, timezone, timedelta
+    con=oa.connect(tmp_path/"week.sqlite3")
+    base=datetime.now(timezone.utc).date()
+    oldest=(base-timedelta(days=6)).isoformat()+"T00:00:00+00:00"
+    too_old=(base-timedelta(days=7)).isoformat()+"T23:59:59+00:00"
+    items=[
+        {"url":"https://example.org/seven-day","title":"The fresh study about local employment",
+         "published_utc":oldest,"excerpt":"Local employment survey"},
+        {"url":"https://example.org/eight-day","title":"A historic report on regional pensions",
+         "published_utc":too_old,"excerpt":"Regional pension report"},
+    ]
+    assert oa.insert_entries(con,SRC,items)["new"]==2
+    con.execute("""UPDATE articles SET status='published',
+        title_hu='Ellenőrzött összefoglaló címe',
+        summary_hu='Első tény. Második tény. Harmadik tény. Negyedik tény. Ötödik tény.',
+        topic='gazdaság'""")
+    from international import TARGET_LANGUAGES
+    ids=con.execute("SELECT id FROM articles").fetchall()
+    for row in ids:
+        for lang in TARGET_LANGUAGES:
+            con.execute("""INSERT INTO article_translations(
+                article_id, lang, title, summary, context_text, translated_utc)
+                VALUES (?,?,?,?,?,?)""",
+                (row["id"],lang,"Verified localized headline",
+                 "Five translated points about the employment report.", "", oa.now_utc()))
+    con.commit()
+    file=tmp_path/"news.json"
+    assert oa.export_json(con,file)==1
+    hu=json.loads(file.read_text(encoding="utf-8"))
+    assert hu["archive"]["days"]==7
+    assert hu["archive"]["timezone"]=="UTC"
+    assert hu["count"]==1
+    assert hu["articles"][0]["url"]=="https://example.org/seven-day"
+    for lang in TARGET_LANGUAGES:
+        loc=json.loads((tmp_path/f"news-{lang}.json").read_text(encoding="utf-8"))
+        assert loc["archive"] == hu["archive"]
+        assert loc["count"]==1
+        assert loc["articles"][0]["url"]=="https://example.org/seven-day"
+    con.close()
+
+
+def test_separate_country_topic_accordions_and_native_date_picker_all_locales():
+    root=Path(__file__).resolve().parents[1]/"docs"
+    for lang in ("hu","en","es","fr","de","pt"):
+        page=(root/lang/"index.html").read_text(encoding="utf-8")
+        assert page.count('class="filters-panel"')==2
+        assert 'id="country-panel"' in page and 'id="topic-panel"' in page
+        assert 'id="archive-date"' in page and 'type="date"' in page
+        assert 'id="archive-all"' in page
+        assert 'id="archive-hint"' in page
+        assert "inSelectedDate" in page
+        assert "setArchivePeriod(data.archive)" in page
+        assert "archivePeriod.start_date" in page
+        assert "archivePeriod.end_date" in page
+        assert "dateScoped=articles.filter(inSelectedDate)" in page
+        assert 'filters-panel" id="filters-panel"' not in page
+    dictionary=(root/"assets"/"i18n.js").read_text(encoding="utf-8")
+    assert dictionary.count("archiveLabel:")==6
+    assert dictionary.count("archiveAll:")==6
+    assert dictionary.count("sourceDate:")==6
