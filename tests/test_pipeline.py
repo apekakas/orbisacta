@@ -671,3 +671,124 @@ def test_separate_country_topic_accordions_and_native_date_picker_all_locales():
     assert dictionary.count("archiveLabel:")==6
     assert dictionary.count("archiveAll:")==6
     assert dictionary.count("sourceDate:")==6
+
+
+def test_quality_metrics_publishers_numbers_explainers_and_gaps():
+    import quality_metrics as qm
+    now=datetime.now(timezone.utc)
+    archive=oa.archive_window(now)
+    today=archive["end_date"]+"T09:00:00+00:00"
+    old_date=(now.date()-__import__("datetime").timedelta(days=8)).isoformat()+"T09:00:00+00:00"
+    next_day=(now.date()+__import__("datetime").timedelta(days=1)).isoformat()+"T09:00:00+00:00"
+    def story(country,topic,source,summary,explanation="",date=today):
+        return {"country":country,"topic":topic,"source_name":source,
+                "summary_hu":summary,"context_text":explanation,"published_utc":date}
+    article_list=[
+        story("HU","gazdaság","Global Voices – Magyarország",
+              "A foglalkoztatottság 73,2 százalék, a munkanélküliség 4,6 százalék volt.",
+              "A PAYE egy brit adólevonási rendszer."),
+        story("HU","tudomány","Global Voices – Tudomány",
+              "Egy kutatócsoport új orvosi módszert ismertetett."),
+        story("HU","gazdaság","NASA – Közlemények",
+              "Az állomás új megfigyelési programja beindult."),
+        story("DE","gazdaság","Global Voices – Németország",
+              "A GDP 3,2 százalékkal bővült, az infláció 1,5 százalékra lassult."),
+        story("HU","gazdaság","Global Voices – Magyarország",
+              "A régi hír 4,7 százalékos adatot tartalmaz.",date=old_date),
+        story("HU","gazdaság","Global Voices – Magyarország",
+              "A jövőbeli hír 4,8 százalékos adatot tartalmaz.",date=next_day),
+        story("HU","gazdaság","Global Voices – Magyarország",
+              "A bizonytalan időbélyeg 5,2 százalékos adatot közöl.",date="2026-11-20"),
+    ]
+    publishers={
+        "Global Voices – Magyarország":"Global Voices",
+        "Global Voices – Tudomány":"Global Voices",
+        "Global Voices – Németország":"Global Voices",
+        "NASA – Közlemények":"NASA",
+    }
+    report=qm.publishable_metrics(
+        article_list,{"HU":"Magyarország","DE":"Németország","IN":"India"},
+        ["gazdaság","tudomány","sport"],archive,oa.now_utc(),publishers)
+    assert report["total"]["published"]==4
+    assert report["total"]["two_numeric_facts"]==2
+    assert report["total"]["with_explainer"]==1
+    assert report["total"]["distinct_publishers"]==2
+    assert report["countries"]["HU"]["published"]==3
+    assert report["countries"]["HU"]["distinct_publishers"]==2
+    assert report["countries"]["HU"]["largest_publisher_share_pct"]==67
+    assert report["countries"]["DE"]["published"]==1
+    assert report["countries"]["IN"]["published"]==0
+    assert report["topics"]["gazdaság"]["published"]==3
+    assert report["topics"]["sport"]["published"]==0
+    assert report["measurement"]["basis"]=="published_Hungarian_source_dated_news_only"
+
+
+def test_quality_report_export_is_aggregate_only_and_reuses_publication_rules(tmp_path):
+    con=oa.connect(tmp_path/"quality.sqlite3")
+    entries=oa.parse_feed(RSS)
+    oa.insert_entries(con,SRC,entries)
+    con.execute("""UPDATE articles SET status='published',
+        title_hu='Ellenőrzött számadatok', topic='gazdaság',
+        summary_hu='A munkanélküliségi ráta 4,6 százalékra változott, a foglalkoztatás 72,1 százalék volt.',
+        context_hu='A helyi fogalom rövid értelmezése a forrás szerint.'""")
+    unpublished=dict(SRC,id="demo2")
+    oa.insert_entries(con,unpublished,[{
+        "url":"https://private-example.org/unpublished",
+        "title":"Do not publish", "published_utc":oa.now_utc(),
+        "excerpt":"Do not publish"
+    }])
+    con.commit()
+    assert oa.export_json(con,tmp_path/"news.json")==1
+    q=json.loads((tmp_path/"quality.json").read_text(encoding="utf-8"))
+    public=json.loads((tmp_path/"news.json").read_text(encoding="utf-8"))
+    assert q["total"]["published"]==public["count"]==1
+    assert q["countries"]["HU"]["published"]==1
+    assert q["countries"]["HU"]["two_numeric_facts"]==1
+    assert q["countries"]["HU"]["with_explainer"]==1
+    assert q["archive"]==public["archive"]
+    assert q["topics"]["gazdaság"]["published"]==1
+    assert q["total"]["distinct_publishers"]==1
+    serialized=json.dumps(q,ensure_ascii=False)
+    assert "private-example.org" not in serialized
+    assert "Do not publish" not in serialized
+    assert "https://example.org/a" not in serialized
+    assert "title_original" not in serialized
+    assert "summary_hu" not in serialized
+    assert "error" not in q
+    con.close()
+
+
+def test_quality_metric_source_dates_require_timezone_and_valid_calendar_window():
+    import quality_metrics as qm
+    assert qm.source_date("2026-11-20T00:30:00+02:00")=="2026-11-19"
+    assert qm.source_date("2026-11-20T00:30:00Z")=="2026-11-20"
+    assert qm.source_date("2026-11-20T00:30:00") is None
+    assert qm.source_date("not-a-date") is None
+    assert qm.source_date(None) is None
+
+
+def test_quality_dashboard_present_localized_and_lazy_loaded_all_pages():
+    root=Path(__file__).resolve().parents[1]/"docs"
+    for locale in ("hu","en","es","fr","de","pt"):
+        page=(root/locale/"index.html").read_text(encoding="utf-8")
+        assert 'id="quality-panel"' in page
+        assert 'id="quality-country-table"' in page
+        assert 'id="quality-topic-table"' in page
+        assert 'id="quality-attention"' in page
+        assert 'id="quality-stats"' in page
+        assert 'src="./assets/quality-dashboard.js"' in page
+        assert ".quality-table-scroll" in page
+    js=(root/"assets"/"quality-dashboard.js").read_text(encoding="utf-8")
+    assert 'panel.addEventListener("toggle"' in js
+    assert 'fetch("./quality.json",{cache:"no-store"})' in js
+    assert "qualityNoCountry" in js
+    assert "qualityOnlyOne" in js
+    assert "qualityNoTopic" in js
+    assert "createTextNode" in js
+    assert "localStorage" not in js
+    assert "navigator.geolocation" not in js
+    labels=(root/"assets"/"i18n.js").read_text(encoding="utf-8")
+    assert labels.count("qualityTitle:")==6
+    assert labels.count("qualityMethod:")==6
+    assert labels.count("qualityNoCountry:")==6
+    assert labels.count("qualityNoTopic:")==6

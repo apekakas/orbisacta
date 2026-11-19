@@ -245,3 +245,36 @@ aktualizálni kell.
   adatbázis vagy automatikus mentés ajánlott.
 - A 10 új AI-hírfeldolgozás és a 3 ötnyelvű fordítás /
   futtatás korlátja nem változik.
+
+## A szerkesztőségi minőség számszerű követése
+
+Minden sikeres hír-export friss, nyilvános **docs/quality.json** összesítést
+készít ugyanabból a hét UTC-naptári napra korlátozott, már publikálásra
+jóváhagyott magyar hírhalmazból, amelyet a news.json tartalmaz.
+A hírportálon a panel alapból zárt, csak megnyitáskor töltődik be.
+
+A panel országonként és témánként közli a publikált hírek számát,
+azokat a híreket, amelyekben legalább két különböző statisztikai érték
+felismerhető, a forráshoz kötött fogalommagyarázatot tartalmazó híreket,
+a különböző **szerkesztőségi kiadók** számát és az egy kiadóhoz
+tartozó hírek arányát. A Global Voices különböző országos és tematikus
+RSS-csatornái nem számítanak külön kiadónak.
+
+A panel külön jelzi, ahol nem jelent meg friss ellenőrzött hír, ahol
+legalább három cikk egyetlen szerkesztőségtől származik, illetve
+ahol egy témában nincs friss hír. A hiány nem azt jelenti, hogy
+az adott országban nem történt esemény, hanem hogy a jelenlegi
+forrás- és szerkesztői rendszerben nincs jóváhagyott új cikk.
+
+**A számfelismerés tájékoztató jellegű mutató:** a meglévő összefoglaló
+szövegéből történik. A régi cikkek eredeti forrását nem kérjük le újra,
+és a két szám jelenléte önmagában nem igazolja a tényhelyességet.
+Nem várunk statisztikai számokat minden témájú cikktől; a
+fogalommagyarázat hiánya sem feltétlenül hiba.
+Ez nem olvasottsági vagy népszerűségi rangsor.
+
+Nem kerülnek ki a belső, jóvá nem hagyott hírek, azok címei,
+az AI-hibák és belső bizonyító idézetek. Nincs látogatói
+IP-feldolgozás, követés vagy személyre szabott mérés.
+A kimutatások az eddigi GitHub-futtatásonkénti
+**10 új AI-hír + 3 ötnyelvű fordítás** költségkeretét nem növelik.
