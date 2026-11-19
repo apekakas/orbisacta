@@ -278,3 +278,18 @@ az AI-hibák és belső bizonyító idézetek. Nincs látogatói
 IP-feldolgozás, követés vagy személyre szabott mérés.
 A kimutatások az eddigi GitHub-futtatásonkénti
 **10 új AI-hír + 3 ötnyelvű fordítás** költségkeretét nem növelik.
+
+## Címközpontú, összecsukható hírek
+
+A hírkártyákban alapból csak az ország zászlója és neve, a témakör
+pasztell jelvénye és a címsor látszik. Natív details/summary elemek
+biztosítják a billentyűzettel is kezelhető lenyitást. A Részletek
+megnyitásakor jelenik meg az ötmondatos összefoglaló, a szerző,
+a dátum, a kiadó, a licenc, az eredeti hír linkje és a meglévő,
+forráshoz kötött fogalommagyarázat. A böngészőkben a közös name
+attribútum egyszerre legfeljebb egy kibontott hírt enged.
+
+A földgömb mobilos megnyitógombján csak egy földgömb ikon marad,
+az országmenü helyjelölőt (📍), a világkategória térképet (🗺️) használ.
+A minőségpanel változatlanul megmarad, de összecsukva.
+Ez kizárólag felületi változás, nem növeli az AI-költséget.

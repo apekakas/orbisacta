@@ -540,9 +540,9 @@ def test_pastel_topic_story_tiles_flags_and_separate_glossaries():
         assert "topicIcons[topicCode]" in page
         assert "countryFlagAssets[item.country]" in page
         assert "flag.src='./assets/flags/'" in page
-        assert "tile.append(card)" in page
-        assert "tile.append(context)" in page
-        assert page.index("tile.append(card)") < page.index("tile.append(context)")
+        assert "tile.append(details)" in page
+        assert "content.append(context)" in page
+        assert page.index("teaser.append(head,headline,hint)") < page.index("content.append(context)")
         assert "item.context_text.trim()" in page
         assert "tr('backgroundTitle')" in page
         assert "feed.append(tile)" in page
@@ -826,3 +826,40 @@ def test_hungarian_inflected_statistic_units_are_detected_correctly():
                           require_unit=True) == set()
     more = "Az éves bérnövekedés 3,2 százalékos, a foglalkoztatottság 73,4 százalékon állt."
     assert numeric_values(more, require_unit=True) == {"3.2", "73.4"}
+
+
+def test_story_cards_show_only_headline_country_topic_until_expansion():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "docs"
+    for lang in ("hu", "en", "es", "fr", "de", "pt"):
+        page = (root / lang / "index.html").read_text(encoding="utf-8")
+        assert "const tile=el('article',null,'story-tile')" in page
+        assert "const details=el('details',null,'story-details')" in page
+        assert "details.name='orbisacta-story'" in page
+        assert "const teaser=el('summary',null,'story-teaser')" in page
+        assert "const headline=el('span',item.title_hu||item.title_original||'','story-headline')" in page
+        assert "headline.setAttribute('role','heading')" in page
+        assert "teaser.append(head,headline,hint)" in page
+        assert "content.append(el('p',item.summary_hu||'','story-copy'))" in page
+        assert "content.append(credit)" in page
+        assert "content.append(link)" in page
+        assert "content.append(context)" in page
+        assert "details.append(teaser,content)" in page
+        assert ".story-details[open] .story-hint-open" in page
+        assert 'id="quality-panel"' in page
+
+
+def test_globe_and_country_selector_use_distinct_single_icons():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "docs"
+    for lang in ("hu", "en", "es", "fr", "de", "pt"):
+        page = (root / lang / "index.html").read_text(encoding="utf-8")
+        assert '<span aria-hidden="true">📍</span><span id="country-title">' in page
+        assert "else button.prepend('🗺️ ')" in page
+        assert "else origin.append(el('span','🗺️','story-world'))" in page
+        assert 'class="globe-toggle" id="globe-toggle"' in page
+    i18n = (root / "assets" / "i18n.js").read_text(encoding="utf-8")
+    assert 'showGlobe:"Földgömb megnyitása"' in i18n
+    assert 'showGlobe:"🌍 Földgömb megnyitása"' not in i18n
+    assert i18n.count("storyExpand:") == 6
+    assert i18n.count("storyCollapse:") == 6

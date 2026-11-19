@@ -352,6 +352,49 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
  .quality-table{font-size:11.5px}
 }
 
+
+/* Headline-first story cards: native closed-by-default details on phone and desktop. */
+.feed article.story-tile{display:block;min-width:0;min-height:0;padding:0;
+ border:1px solid var(--line);border-radius:14px}
+.feed .story-details{display:block;width:100%}
+.feed .story-details>summary.story-teaser{list-style:none;cursor:pointer;
+ border-top:4px solid var(--topic-edge);padding:16px 18px 13px;
+ display:flex;flex-direction:column;gap:11px;min-height:132px}
+.feed .story-details>summary.story-teaser::marker{content:""}
+.feed .story-details>summary.story-teaser::-webkit-details-marker{display:none}
+.feed .story-details>summary.story-teaser:focus-visible{
+ outline:3px solid #56a99b;outline-offset:-4px;border-radius:12px}
+.feed .story-details>summary.story-teaser:hover{background:var(--topic-tint)}
+.feed .story-details[open]>summary.story-teaser{background:var(--topic-tint)}
+.feed .story-headline{display:block;color:var(--ink);font-size:19px;
+ font-weight:800;letter-spacing:-.025em;line-height:1.3;overflow-wrap:anywhere}
+.feed .story-hint{display:flex;align-items:center;gap:6px;align-self:flex-end;
+ margin-top:auto;color:var(--topic-ink);font-size:12px;font-weight:760}
+.feed .story-hint-open{display:none}
+.feed .story-details[open] .story-hint-open{display:inline}
+.feed .story-details[open] .story-hint-closed{display:none}
+.feed .story-chevron{display:inline-block;font-size:20px;line-height:1;transition:transform .16s}
+.feed .story-details[open] .story-chevron{transform:rotate(180deg)}
+.feed .story-content{display:flex;flex-direction:column;gap:13px;
+ padding:16px 19px 19px;border-top:1px solid #e2eae7}
+.feed .story-content>.story-copy{color:#344b55;line-height:1.75;font-size:14px;margin:0}
+.feed .story-content>.story-credit{color:#526575;line-height:1.6;font-size:12px}
+.feed .story-content>.story-source{color:#667987;font-size:11px}
+.feed .story-content>a{align-self:flex-start;margin-top:0}
+.feed .story-content>.article-context{display:flex;flex-direction:column;gap:6px;
+ margin:2px -19px -19px;padding:15px 19px 18px;
+ border:0;border-top:1px solid var(--topic-edge);border-radius:0;
+ background:var(--topic-tint)}
+.feed .story-content>.article-context strong{color:var(--topic-ink);font-size:12.5px}
+.feed .story-content>.article-context p{color:#344b55;font-size:13px;line-height:1.65;margin:0}
+@media(max-width:680px){
+ .feed .story-details>summary.story-teaser{padding:13px 14px 12px;min-height:116px;gap:9px}
+ .feed .story-headline{font-size:18px;line-height:1.28}
+ .feed .story-content{padding:14px 15px 16px}
+ .feed .story-content>.article-context{margin:2px -15px -16px;padding:12px 15px 15px}
+}
+@media(prefers-reduced-motion:reduce){.feed .story-chevron{transition:none}}
+
 </style>
 </head>
 <body>
@@ -397,7 +440,7 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
   <p class="globe-source-note">Térképi alapadatok: Natural Earth (közkincs). A jelölők tájékoztató jellegűek, nem országhatár-kijelölések.</p>
   <section class="filter-accordions" aria-label="Hírszűrők">
     <details class="filters-panel" id="country-panel">
-      <summary class="filters-summary"><span class="filters-heading"><span aria-hidden="true">🌍</span><span id="country-title">Országok</span></span><span class="filters-overview" id="country-current">Összes ország</span><span class="filters-chevron" aria-hidden="true">⌄</span></summary>
+      <summary class="filters-summary"><span class="filters-heading"><span aria-hidden="true">📍</span><span id="country-title">Országok</span></span><span class="filters-overview" id="country-current">Összes ország</span><span class="filters-chevron" aria-hidden="true">⌄</span></summary>
       <div class="filters"><div><div class="group-label">Országok</div><div class="chips" id="countries"></div></div></div>
     </details>
     <details class="filters-panel" id="topic-panel">
@@ -514,7 +557,7 @@ function renderControls(){
    flag.alt='';
    flag.width=22;flag.height=17;
    button.prepend(flag);
-  }else button.prepend('🌐 ');
+  }else button.prepend('🗺️ ');
   countryEl.append(button);
  });
  const selection=selected.size===Object.keys(names).length?tr('allCountries'):selected.size+' '+tr('countriesShort');
@@ -563,42 +606,51 @@ function render(){
  }
  for(const item of visible){
   const topicCode=Object.prototype.hasOwnProperty.call(topicIcons,item.topic)?item.topic:'egyéb';
-  const tile=el('div',null,'story-tile');
+  const tile=el('article',null,'story-tile');
   tile.dataset.topic=topicCode;
-  const card=el('article');
-  const head=el('div',null,'story-header');
-  const origin=el('div',null,'story-country');
+  const details=el('details',null,'story-details');
+  details.name='orbisacta-story';
+  const teaser=el('summary',null,'story-teaser');
+  const head=el('span',null,'story-header');
+  const origin=el('span',null,'story-country');
   if(countryFlagAssets[item.country]){
    const flag=document.createElement('img');
    flag.className='chip-flag';
    flag.src='./assets/flags/'+countryFlagAssets[item.country]+'.svg';
    flag.alt='';flag.width=24;flag.height=18;
    origin.append(flag);
-  }else origin.append(el('span','🌐','story-world'));
+  }else origin.append(el('span','🗺️','story-world'));
   origin.append(el('span',names[item.country]||item.country||tr('world')));
   const category=el('span',null,'story-topic');
   const categoryIcon=el('span',topicIcons[topicCode],'story-topic-icon');
   categoryIcon.setAttribute('aria-hidden','true');
   category.append(categoryIcon,el('span',tr('topics')[topicCode]||topicCode));
   head.append(origin,category);
-  card.append(head);
-  if(item.source_name)card.append(el('span',item.source_name,'story-source'));
-  card.append(el('h2',item.title_hu));
-  card.append(el('p',item.summary_hu));
+  const headline=el('span',item.title_hu||item.title_original||'','story-headline');
+  headline.setAttribute('role','heading');
+  headline.setAttribute('aria-level','2');
+  const hint=el('span',null,'story-hint');
+  hint.append(el('span',tr('storyExpand'),'story-hint-closed'),
+    el('span',tr('storyCollapse'),'story-hint-open'),
+    el('span','⌄','story-chevron'));
+  teaser.append(head,headline,hint);
+  const content=el('div',null,'story-content');
+  if(item.source_name)content.append(el('span',item.source_name,'story-source'));
+  content.append(el('p',item.summary_hu||'','story-copy'));
   const publishedDate=item.published_utc?new Date(item.published_utc).toLocaleDateString(currentLang==='pt'?'pt-BR':currentLang,{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}):'';
-  const credit=el('small',(publishedDate?tr('sourceDate')+': '+publishedDate+' · ':'')+(item.author?item.author+' · ':'')+(item.source_name||'')+(item.license?' · '+item.license:'')+' · '+tr('credit'));
-  credit.style.cssText='color:#526575;line-height:1.55;font-size:12px';
-  card.append(credit);
+  const credit=el('small',(publishedDate?tr('sourceDate')+': '+publishedDate+' · ':'')+(item.author?item.author+' · ':'')+(item.source_name||'')+(item.license?' · '+item.license:'')+' · '+tr('credit'),'story-credit');
+  content.append(credit);
   const link=el('a',tr('sourceLink'));
   link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';
-  card.append(link);
-  tile.append(card);
+  content.append(link);
   if(typeof item.context_text==='string'&&item.context_text.trim()){
    const context=el('aside',null,'article-context');
    context.append(el('strong',tr('backgroundTitle')));
    context.append(el('p',item.context_text));
-   tile.append(context);
+   content.append(context);
   }
+  details.append(teaser,content);
+  tile.append(details);
   feed.append(tile);
  }
 
