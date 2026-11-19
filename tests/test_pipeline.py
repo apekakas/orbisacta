@@ -486,6 +486,41 @@ def test_globe_mobile_pinch_and_expanded_regional_navigation():
     assert "pinchDistance" in code
     assert "pointers.size>=2" in code
     assert "data-globe-zoom" in code
-    assert "minScale=125,maxScale=360" in code
+    assert "minScale=110,maxScale=560" in code
     assert "africa:[22,0]" in code
     assert "oceania:[135,-25]" in code
+
+
+def test_compact_filter_panels_and_language_names_across_six_locales():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "docs"
+    for lang in ("hu", "en", "es", "fr", "de", "pt"):
+        page = (root / lang / "index.html").read_text(encoding="utf-8")
+        assert '<details class="filters-panel" id="filters-panel">' in page
+        assert 'id="filters-title"' in page
+        assert 'id="filter-current"' in page
+        assert 'id="show-news"' in page
+        assert "filtersPanel.open=false;" in page
+        assert "id=\"current-language-name\"" in page
+        assert ".language-picker span{display:none}" not in page
+        assert "#current-language-name{display:inline!important" in page
+        assert 'id="globe-zoom-level"' in page
+        assert 'data-globe-zoom="in"' in page
+        assert 'data-globe-zoom="out"' in page
+    i18n = (root / "assets" / "i18n.js").read_text(encoding="utf-8")
+    assert i18n.count("filtersTitle:") == 6
+    assert i18n.count("viewResults:") == 6
+    assert i18n.count("countriesShort:") == 6
+
+
+def test_globe_native_multitouch_and_obvious_mobile_zoom_controls():
+    from pathlib import Path
+    globe = (Path(__file__).resolve().parents[1] / "docs" / "assets" / "globe.js").read_text(encoding="utf-8")
+    assert 'svg.addEventListener("touchstart"' in globe
+    assert 'svg.addEventListener("touchmove"' in globe
+    assert 'svg.addEventListener("touchend"' in globe
+    assert "ev.preventDefault()" in globe
+    assert "touchGap(ev.touches)" in globe
+    assert 'const initialScale=window.matchMedia("(max-width:680px)").matches?255:192;' in globe
+    assert 'button.dataset.globeZoom==="in"?1.4:1/1.4' in globe
+    assert 'document.getElementById("globe-zoom-level")' in globe
