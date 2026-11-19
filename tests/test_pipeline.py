@@ -226,3 +226,23 @@ def test_translation_cap_zero_does_not_use_api(tmp_path, monkeypatch):
     monkeypatch.setenv('OPENAI_API_KEY', 'offline-fake')
     assert il.translate_pending(db, 0)['attempted'] == 0
     db.close()
+
+
+def test_international_static_pages_and_dormant_advertising():
+    import international as il
+    assert set(il.LANGUAGES) == {"hu", "en", "es", "fr", "de", "pt"}
+    root = Path(__file__).resolve().parents[1] / "docs"
+    for lang in il.LANGUAGES:
+        html_page = (root / lang / "index.html").read_text(encoding="utf-8")
+        assert '<html lang="' + lang + '">' in html_page
+        assert '<base href="../"/>' in html_page
+        assert "ORBIS_PAGE_LANG" in html_page
+    for path in ("assets/i18n.js", "assets/globe.js", "ads-config.json", "sitemap.xml"):
+        assert (root / path).is_file()
+    config = json.loads((root / "ads-config.json").read_text(encoding="utf-8"))
+    assert config["enabled"] is False
+    assert config["adScriptsAllowed"] is False
+    page = (root / "index.html").read_text(encoding="utf-8")
+    assert 'data-ad-slot="top-banner" hidden' in page
+    assert 'data-ad-slot="in-feed" hidden' in page
+    assert "googlesyndication.com" not in page
