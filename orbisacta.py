@@ -83,6 +83,8 @@ def connect(db_path: Path = DB_PATH):
             con.execute(f"ALTER TABLE articles ADD COLUMN {field} TEXT DEFAULT ''")
     con.execute("CREATE INDEX IF NOT EXISTS by_country_status ON articles(country, status)")
     con.commit()
+    from international import install_schema
+    install_schema(con)
     return con
 
 
@@ -404,7 +406,10 @@ def export_json(con, destination: Path = PUBLISH_PATH):
                "articles": [dict(r) for r in rows], "count": len(rows),
                "notice": "AI-based Hungarian summaries, adapted from attributed source text. No original photos. Open original for context."}
     destination.parent.mkdir(parents=True, exist_ok=True)
+    payload["language"] = "hu"
     destination.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    from international import export_languages
+    export_languages(con, payload, destination.parent)
     return len(rows)
 
 
@@ -481,6 +486,7 @@ def main(argv=None):
     parser.add_argument("command", choices=["collect", "process", "export", "run", "status", "serve", "sources", "latest", "check-feeds"])
     parser.add_argument("--limit-per-feed", type=int, default=10)
     parser.add_argument("--max-ai", type=int, default=12)
+    parser.add_argument("--max-translations", type=int, default=3, help="Maximum source articles translated into five languages per run")
     parser.add_argument("--model", default=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"))
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args(argv)
@@ -517,6 +523,9 @@ def main(argv=None):
             report["collection"] = collect(con, sources, args.limit_per_feed)
         if args.command in ("process", "run"):
             report["ai"] = process(con, sources, args.max_ai, args.model)
+        if args.command in ("process", "run"):
+            from international import translate_pending
+            report["translations"] = translate_pending(con, args.max_translations, args.model)
         if args.command in ("export", "run"):
             report["exported"] = export_json(con)
         report["by_status"] = status_counts(con)
@@ -527,6 +536,8 @@ def main(argv=None):
         print("Állapot:", json.dumps(report["by_status"], ensure_ascii=False))
         if "exported" in report:
             print("Közzétételre kész összefoglalók:", report["exported"])
+        if "translations" in report:
+            print("Ötnyelvű fordítás új hírekhez:", report["translations"]["completed"])
         return report
     finally:
         con.close()
