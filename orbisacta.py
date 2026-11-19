@@ -30,7 +30,7 @@ PUBLISH_PATH = BASE / "docs" / "news.json"
 RUN_REPORT_PATH = BASE / "data" / "last_run.json"
 PUBLIC_STATUS_PATH = BASE / "docs" / "site-status.json"
 TOPICS = ("politika", "gazdaság", "tudomány", "sport", "kultúra", "egyéb")
-COUNTRIES = {"HU": "Magyarország", "DE": "Németország", "FR": "Franciaország", "IT": "Olaszország", "JP": "Japán", "BR": "Brazília", "US": "Egyesült Államok", "GB": "Egyesült Királyság", "EU": "Európai Unió", "WORLD": "Világ"}
+COUNTRIES = {"HU": "Magyarország", "DE": "Németország", "FR": "Franciaország", "IT": "Olaszország", "JP": "Japán", "BR": "Brazília", "IN": "India", "CN": "Kína", "AU": "Ausztrália", "SA": "Szaúd-Arábia", "NG": "Nigéria", "ZA": "Dél-Afrika", "US": "Egyesült Államok", "GB": "Egyesült Királyság", "EU": "Európai Unió", "WORLD": "Világ"}
 
 
 def now_utc():

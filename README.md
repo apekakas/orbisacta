@@ -165,3 +165,21 @@ aktualizálni kell.
 - A számfelismerés szándékosan konzervatív: fontos marad a kézi ellenőrzés
   arra, hogy egy százalék vagy más mérőszám szövegkörnyezete,
   időszaka és jelentése nem változott-e meg a fordítás során.
+
+
+## Globális országkínálat és telefonos használat
+
+- Hozzáadott országok: India (IN), Kína (CN), Ausztrália (AU),
+  Szaúd-Arábia (SA), Nigéria (NG), Dél-Afrika (ZA).
+- Az országlista telefonon kétoszlopos, valóban tördelődő rács:
+  nincs oldalra kilógó vagy csak vízszintesen lapozva elérhető elem.
+  A földgömb megmarad külön megnyitható nézetnek, egyujjas
+  forgatással, kétujjas csippentéses nagyítással és +/− gombokkal.
+- Az országok számának növekedése nem jelenti azt, hogy rögtön
+  van mindegyikről magyar, illetve öt idegen nyelvű összefoglaló.
+  Az új országok Global Voices RSS-csatornái először éles
+  ellenőrzésen mennek át; az esetleg hibás vagy üres feed
+  miatt nem állhat le a többi ország hírgyűjtése.
+- A meglévő 10 AI-cikk és 3 ötnyelvű fordítás futtatásonkénti
+  költségkorlátja változatlan. Az országszűrés és a hírportál
+  nyelvválasztása továbbra is független egymástól.

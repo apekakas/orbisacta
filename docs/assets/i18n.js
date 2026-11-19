@@ -10,10 +10,10 @@ hu:{
  globeEye:"OrbisActa · Világtérkép",globeTitle:"A hírek földrajzi nézetben.",
  globeLead:"Forgasd a Földet, válassz országot, és olvasd a rendelkezésre álló magyar összefoglalókat.",
  globeCount:"ellenőrzött hír a rendszerben",globeReady:"Országválasztásra készen.",
- globeHelp:"Húzd a forgatáshoz · Görgess a nagyításhoz · Kattints az országra",
+ globeHelp:"Forgatás egy ujjal · Nagyítás két ujjal vagy a +/− gombbal",
  globeSource:"Térképi alapadatok: Natural Earth (közkincs). A jelölők tájékoztató jellegűek.",
  europe:"Európa",america:"Amerika",asia:"Ázsia",allNews:"Összes hír",
- countryLabel:"Országok (legfeljebb 10)",topicLabel:"Témakör",
+ countryLabel:"Országok",africa:"Afrika",oceania:"Óceánia",zoomIn:"Nagyítás",zoomOut:"Kicsinyítés",topicLabel:"Témakör",
  sort:"Rendezés",latest:"Legfrissebb elöl",importance:"Legfontosabb elöl",
  footer:"OrbisActa · Fejlesztői prototípus. Az AI-val készült összefoglalók nem helyettesítik az eredeti cikkeket vagy az emberi ellenőrzést.",
  allCountries:"Összes ország",allTopics:"Összes",topics:{politika:"Politika",gazdaság:"Gazdaság",tudomány:"Tudomány",sport:"Sport",kultúra:"Kultúra",egyéb:"Egyéb"},
@@ -34,10 +34,10 @@ en:{
  globeEye:"OrbisActa · World map",globeTitle:"Explore news around the world.",
  globeLead:"Rotate the globe, choose a country, and read available English news summaries.",
  globeCount:"verified summaries in the system",globeReady:"Choose a country to explore.",
- globeHelp:"Drag to rotate · Scroll to zoom · Click a country",
+ globeHelp:"Drag to rotate · Pinch or use +/− to zoom",
  globeSource:"Map data: Natural Earth (public domain). Markers are indicative, not official borders.",
  europe:"Europe",america:"Americas",asia:"Asia",allNews:"All news",
- countryLabel:"Countries (up to 10)",topicLabel:"Topic",
+ countryLabel:"Countries",africa:"Africa",oceania:"Oceania",zoomIn:"Zoom in",zoomOut:"Zoom out",topicLabel:"Topic",
  sort:"Sort by",latest:"Newest first",importance:"Most important first",
  footer:"OrbisActa · Editorial pilot. AI-generated summaries do not replace original reporting or human editorial verification.",
  allCountries:"All countries",allTopics:"All",topics:{politika:"Politics",gazdaság:"Economy",tudomány:"Science",sport:"Sports",kultúra:"Culture",egyéb:"Other"},
@@ -58,10 +58,10 @@ es:{
  globeEye:"OrbisActa · Mapa mundial",globeTitle:"Explora las noticias del mundo.",
  globeLead:"Gira el globo, elige un país y lee los resúmenes disponibles en español.",
  globeCount:"noticias verificadas en el sistema",globeReady:"Selecciona un país para explorar.",
- globeHelp:"Arrastra para girar · Desplázate para ampliar · Elige un país",
+ globeHelp:"Arrastra para girar · Pellizca o usa +/− para ampliar",
  globeSource:"Datos cartográficos: Natural Earth (dominio público). Los marcadores son orientativos.",
  europe:"Europa",america:"América",asia:"Asia",allNews:"Todas las noticias",
- countryLabel:"Países (máximo 10)",topicLabel:"Tema",
+ countryLabel:"Países",africa:"África",oceania:"Oceanía",zoomIn:"Acercar",zoomOut:"Alejar",topicLabel:"Tema",
  sort:"Ordenar",latest:"Más recientes",importance:"Más importantes",
  footer:"OrbisActa · Proyecto editorial. Los resúmenes con IA no sustituyen las fuentes originales ni la revisión humana.",
  allCountries:"Todos los países",allTopics:"Todos",topics:{politika:"Política",gazdaság:"Economía",tudomány:"Ciencia",sport:"Deportes",kultúra:"Cultura",egyéb:"Otros"},
@@ -82,10 +82,10 @@ fr:{
  globeEye:"OrbisActa · Carte du monde",globeTitle:"Explorez l'actualité sur le globe.",
  globeLead:"Faites tourner le globe, choisissez un pays et lisez les résumés disponibles en français.",
  globeCount:"articles vérifiés dans le système",globeReady:"Sélectionnez un pays.",
- globeHelp:"Glisser pour tourner · Défiler pour zoomer · Choisir un pays",
+ globeHelp:"Glissez pour tourner · Pincez ou utilisez +/− pour zoomer",
  globeSource:"Données cartographiques : Natural Earth (domaine public). Les repères sont indicatifs.",
  europe:"Europe",america:"Amériques",asia:"Asie",allNews:"Toute l'actualité",
- countryLabel:"Pays (10 maximum)",topicLabel:"Thème",
+ countryLabel:"Pays",africa:"Afrique",oceania:"Océanie",zoomIn:"Zoom avant",zoomOut:"Zoom arrière",topicLabel:"Thème",
  sort:"Trier par",latest:"Plus récents",importance:"Plus importants",
  footer:"OrbisActa · Projet éditorial. Les résumés générés par IA ne remplacent ni les sources originales ni la vérification humaine.",
  allCountries:"Tous les pays",allTopics:"Tous",topics:{politika:"Politique",gazdaság:"Économie",tudomány:"Sciences",sport:"Sport",kultúra:"Culture",egyéb:"Autres"},
@@ -106,10 +106,10 @@ de:{
  globeEye:"OrbisActa · Weltkarte",globeTitle:"Nachrichten auf der Weltkarte entdecken.",
  globeLead:"Drehen Sie die Erde, wählen Sie ein Land und lesen Sie verfügbare deutsche Zusammenfassungen.",
  globeCount:"geprüfte Nachrichten im System",globeReady:"Wählen Sie ein Land aus.",
- globeHelp:"Ziehen zum Drehen · Scrollen zum Zoomen · Land auswählen",
+ globeHelp:"Zum Drehen ziehen · Zum Zoomen zwei Finger oder +/− verwenden",
  globeSource:"Kartendaten: Natural Earth (gemeinfrei). Markierungen dienen der Orientierung.",
  europe:"Europa",america:"Amerika",asia:"Asien",allNews:"Alle Nachrichten",
- countryLabel:"Länder (bis zu 10)",topicLabel:"Thema",
+ countryLabel:"Länder",africa:"Afrika",oceania:"Ozeanien",zoomIn:"Vergrößern",zoomOut:"Verkleinern",topicLabel:"Thema",
  sort:"Sortierung",latest:"Neueste zuerst",importance:"Wichtigste zuerst",
  footer:"OrbisActa · Redaktionspilot. KI-Zusammenfassungen ersetzen weder Originalquellen noch menschliche Prüfung.",
  allCountries:"Alle Länder",allTopics:"Alle",topics:{politika:"Politik",gazdaság:"Wirtschaft",tudomány:"Wissenschaft",sport:"Sport",kultúra:"Kultur",egyéb:"Sonstiges"},
@@ -130,10 +130,10 @@ pt:{
  globeEye:"OrbisActa · Mapa-múndi",globeTitle:"Explore notícias pelo mundo.",
  globeLead:"Gire o globo, escolha um país e leia os resumos disponíveis em português.",
  globeCount:"notícias verificadas no sistema",globeReady:"Selecione um país.",
- globeHelp:"Arraste para girar · Role para ampliar · Clique no país",
+ globeHelp:"Arraste para girar · Aproxime com dois dedos ou use +/−",
  globeSource:"Dados cartográficos: Natural Earth (domínio público). Marcadores são indicativos.",
  europe:"Europa",america:"Américas",asia:"Ásia",allNews:"Todas as notícias",
- countryLabel:"Países (até 10)",topicLabel:"Tema",
+ countryLabel:"Países",africa:"África",oceania:"Oceania",zoomIn:"Ampliar",zoomOut:"Reduzir",topicLabel:"Tema",
  sort:"Ordenar",latest:"Mais recentes",importance:"Mais importantes",
  footer:"OrbisActa · Projeto editorial. Resumos gerados por IA não substituem as fontes originais nem a revisão humana.",
  allCountries:"Todos os países",allTopics:"Todos",topics:{politika:"Política",gazdaság:"Economia",tudomány:"Ciência",sport:"Esportes",kultúra:"Cultura",egyéb:"Outros"},
@@ -148,7 +148,7 @@ pt:{
  chooseCountry:"selecionar notícias de",showGlobe:"Mostrar globo interativo",hideGlobe:"Ocultar globo",featured:"Em destaque · recentes e importantes",language:"Idioma",translationNote:"Os textos em português são traduzidos a partir de resumos húngaros verificados."
 }
 };
-const fallbackCountries={HU:"Magyarország",DE:"Németország",FR:"Franciaország",IT:"Olaszország",JP:"Japán",BR:"Brazília",US:"Egyesült Államok",GB:"Egyesült Királyság"};
+const fallbackCountries={HU:"Magyarország",DE:"Németország",FR:"Franciaország",IT:"Olaszország",JP:"Japán",BR:"Brazília",IN:"India",CN:"Kína",AU:"Ausztrália",SA:"Szaúd-Arábia",NG:"Nigéria",ZA:"Dél-Afrika",US:"Egyesült Államok",GB:"Egyesült Királyság"};
 function supported(candidate){return Object.prototype.hasOwnProperty.call(locales,candidate)}
 function normalize(language){const code=String(language||"").toLowerCase().split("-")[0];return supported(code)?code:null}
 function preferred(){
@@ -176,7 +176,7 @@ function apply(lang){
  ".globe-desc":"globeLead",".globe-total-label":"globeCount",
  ".globe-map-note":"globeHelp",".globe-source-note":"globeSource",
  '[data-globe-focus="europe"]':"europe",'[data-globe-focus="america"]':"america",
- '[data-globe-focus="asia"]':"asia","#globe-reset":"allNews",
+ '[data-globe-focus="asia"]':"asia",'[data-globe-focus="africa"]':"africa",'[data-globe-focus="oceania"]':"oceania","#globe-reset":"allNews",
  ".filters .group-label:first-child":"countryLabel",
  ".sort-controls label":"sort",'#sort option[value="latest"]':"latest",
  '#sort option[value="importance"]':"importance",'#sort option[value="featured"]':"featured","footer":"footer"
@@ -204,6 +204,10 @@ function apply(lang){
    else link.removeAttribute("aria-current");
   });
  }
+ document.querySelectorAll("[data-globe-zoom]").forEach(button=>{
+  button.setAttribute("aria-label",t(lang,button.dataset.globeZoom==="in"?"zoomIn":"zoomOut"));
+  button.title=t(lang,button.dataset.globeZoom==="in"?"zoomIn":"zoomOut");
+ });
  const toggle=document.getElementById("globe-toggle");if(toggle){const label=toggle.querySelector("span");if(label)label.textContent=t(lang,"showGlobe")}
  const note=document.getElementById("translation-note");
  if(note)note.textContent=t(lang,"translationNote");
