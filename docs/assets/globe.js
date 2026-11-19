@@ -46,13 +46,19 @@ function mount(options){
  let center=[12,47],scale=initialScale,land=null,items=[],active=new Set();
  const minScale=110,maxScale=560;
  const clampZoom=value=>Math.max(minScale,Math.min(maxScale,value));
+ const zoomIndicator=document.getElementById("globe-zoom-level");
+ function updateZoomStatus(){
+   if(!zoomIndicator)return;
+   const percent=Math.round(scale/initialScale*100);
+   // A normal span is reliable on Android; <output> may be managed by forms.
+   zoomIndicator.textContent=percent+"%";
+   zoomIndicator.dataset.zoomPercent=String(percent);
+   zoomIndicator.setAttribute("aria-label",tr("zoomLevel")+": "+percent+"%");
+ }
  function zoomBy(factor){
    scale=clampZoom(scale*factor);
+   updateZoomStatus();
    redraw();
- }
- function updateZoomStatus(){
-   const indicator=document.getElementById("globe-zoom-level");
-   if(indicator)indicator.textContent=Math.round(scale/initialScale*100)+"%";
  }
  const projection=d3.geoOrthographic().scale(scale).translate([360,218]).rotate([-center[0],-center[1]]).clipAngle(90).precision(0.75);
  const path=d3.geoPath(projection);
