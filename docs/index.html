@@ -265,6 +265,45 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
 }
 @media(prefers-reduced-motion:reduce){.feed .story-tile{transition:none}}
 
+
+/* Country and topic filters are independently collapsible on every screen. */
+.filter-accordions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:10px;margin:16px 0 10px}
+.filter-accordions>.filters-panel{min-width:0;margin:0;overflow:visible;border-radius:13px}
+.filter-accordions .filters-summary{min-width:0;padding:11px 12px;min-height:58px;gap:7px}
+.filter-accordions .filters-heading{font-size:13px;white-space:nowrap;min-width:0}
+.filter-accordions .filters-overview{font-size:11px;min-width:0;overflow-wrap:anywhere;text-align:right}
+.filter-accordions .filters-chevron{flex:none}
+.filter-accordions .filters{border-radius:0 0 13px 13px;padding:15px 12px;min-width:0;overflow:visible}
+.filter-accordions .filters>div{min-width:0}
+.filter-accordions .show-news{grid-column:1/-1;justify-self:start;min-height:38px;background:#ecf7f2;color:#0b675c;
+ border:1px solid #c9e8df;padding:8px 14px;font-size:12px}
+.filter-accordions .show-news:hover{background:#d6f1e8}
+.archive-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 6px;padding:12px 15px;
+ border:1px solid #d5e5e2;background:#f8fbfa;border-radius:12px}
+.archive-controls label{font-weight:750;color:#244b50;font-size:12px}
+.archive-controls input[type=date]{background:#fff;border:1px solid #bad6cf;border-radius:9px;padding:8px 10px;
+ min-height:39px;color:#1f4650;font-size:13px;max-width:190px}
+.archive-controls input[type=date]:focus-visible,.archive-controls button:focus-visible{outline:3px solid #76caba;outline-offset:2px}
+.archive-controls button{min-height:39px;padding:8px 12px;border-radius:9px;border:1px solid #c5ddd8;background:#fff;
+ color:#245751;font-size:12px;font-weight:750;cursor:pointer}
+.archive-controls button[aria-pressed=true]{background:#0f665d;color:#fff;border-color:#0f665d}
+.archive-controls .archive-hint{margin-left:auto;font-size:11px;color:#5d7278}
+@media(max-width:840px){
+ .filter-accordions{grid-template-columns:minmax(0,1fr)}
+ .filter-accordions .filters-summary{min-height:52px}
+ .filter-accordions .filters-overview{margin-left:auto}
+ .filter-accordions .filters #countries{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .filter-accordions .filters #topics{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .filter-accordions .show-news{width:100%;justify-self:stretch}
+ .archive-controls{gap:8px;margin-top:12px;padding:10px 11px}
+ .archive-controls .archive-hint{margin-left:0;flex-basis:100%;font-size:10px}
+}
+@media(max-width:370px){
+ .filter-accordions .filters #topics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .filter-accordions .filters-heading{font-size:12px}
+ .archive-controls input[type=date]{flex:1;min-width:0}
+}
+
 </style>
 </head>
 <body>
@@ -308,15 +347,24 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
     </div>
   </section>
   <p class="globe-source-note">Térképi alapadatok: Natural Earth (közkincs). A jelölők tájékoztató jellegűek, nem országhatár-kijelölések.</p>
-  <details class="filters-panel" id="filters-panel">
-    <summary class="filters-summary"><span class="filters-heading"><span aria-hidden="true">☷</span><span id="filters-title">Országok és témák</span></span><span class="filters-overview" id="filter-current">Összes ország · Összes</span><span class="filters-chevron" aria-hidden="true">⌄</span></summary>
-    <section class="filters" aria-label="Hírszűrők">
-      <div><div class="group-label">Országok</div><div class="chips" id="countries"></div></div>
-      <div><div class="group-label">Témakör</div><div class="chips" id="topics"></div></div>
-      <button type="button" id="show-news" class="show-news">Hírek megtekintése</button>
-    </section>
-  </details>
+  <section class="filter-accordions" aria-label="Hírszűrők">
+    <details class="filters-panel" id="country-panel">
+      <summary class="filters-summary"><span class="filters-heading"><span aria-hidden="true">🌍</span><span id="country-title">Országok</span></span><span class="filters-overview" id="country-current">Összes ország</span><span class="filters-chevron" aria-hidden="true">⌄</span></summary>
+      <div class="filters"><div><div class="group-label">Országok</div><div class="chips" id="countries"></div></div></div>
+    </details>
+    <details class="filters-panel" id="topic-panel">
+      <summary class="filters-summary"><span class="filters-heading"><span aria-hidden="true">☷</span><span id="topic-title">Témák</span></span><span class="filters-overview" id="topic-current">Összes</span><span class="filters-chevron" aria-hidden="true">⌄</span></summary>
+      <div class="filters"><div><div class="group-label">Témakör</div><div class="chips" id="topics"></div></div></div>
+    </details>
+    <button type="button" id="show-news" class="show-news">Hírek megtekintése</button>
+  </section>
   <p id="translation-note" class="translation-note"></p>
+  <section class="archive-controls" aria-label="Hétnapos hírarchívum">
+    <label for="archive-date" id="archive-label">Dátum</label>
+    <input type="date" id="archive-date" autocomplete="off" aria-describedby="archive-hint" disabled>
+    <button type="button" id="archive-all" aria-pressed="true">Mind a 7 nap</button>
+    <span id="archive-hint" class="archive-hint">Az elmúlt 7 nap · UTC</span>
+  </section>
   <div class="meta"><div class="count" id="count">Hírek betöltése…</div><div class="sort-controls"><label for="sort">Rendezés</label><select id="sort"><option value="featured">Ajánlott · friss és fontos</option><option value="latest">Legfrissebb elöl</option><option value="importance">Legfontosabb elöl</option></select></div><div id="updated"></div></div>
   <section class="feed" id="feed" aria-live="polite"></section>
   <div class="ad-slot" id="ad-in-feed" data-ad-slot="in-feed" hidden aria-hidden="true"></div>
@@ -345,6 +393,37 @@ let selected=new Set(previousCountries.length?previousCountries:Object.keys(name
 let topic='Összes';
 try{const stored=sessionStorage.getItem('orbisacta_topic');if(topics.includes(stored))topic=stored}catch(e){}
 let articles=[],sortOrder='featured';
+
+const archiveDate=document.getElementById('archive-date');
+const archiveAll=document.getElementById('archive-all');
+let selectedDate='';
+let archivePeriod=null;
+function storyUtcDate(article){
+ const moment=Date.parse(article.published_utc||'');
+ return Number.isFinite(moment)?new Date(moment).toISOString().slice(0,10):'';
+}
+function inSelectedDate(article){return !selectedDate||storyUtcDate(article)===selectedDate}
+function setArchivePeriod(period){
+ if(!period||period.days!==7||!period.start_date||!period.end_date)return;
+ archivePeriod=period;
+ archiveDate.min=period.start_date;archiveDate.max=period.end_date;
+ archiveDate.disabled=false;
+ document.getElementById('archive-hint').textContent=
+  period.start_date+' – '+period.end_date+' · UTC';
+}
+archiveDate.addEventListener('change',()=>{
+ const value=archiveDate.value;
+ selectedDate=archivePeriod&&value>=archivePeriod.start_date&&value<=archivePeriod.end_date?value:'';
+ if(!selectedDate)archiveDate.value='';
+ archiveAll.setAttribute('aria-pressed',String(!selectedDate));
+ renderControls();render();
+});
+archiveAll.addEventListener('click',()=>{
+ selectedDate='';archiveDate.value='';
+ archiveAll.setAttribute('aria-pressed','true');
+ renderControls();render();
+});
+
 const feed=document.getElementById('feed');
 let globeView=null;
 i18n.apply(currentLang);
@@ -358,7 +437,7 @@ function renderControls(){
   selected=new Set(Object.keys(names));renderControls();render()
  }));
  Object.entries(names).sort((a,b)=>countryAlphabet.compare(a[1],b[1])||a[0].localeCompare(b[0])).forEach(([code,name])=>{
-  const total=articles.filter(a=>a.country===code).length;
+  const total=articles.filter(a=>a.country===code&&inSelectedDate(a)).length;
   const button=btn(name+' ('+total+')',selected.has(code),()=>{
    if(selected.has(code))selected.delete(code);else selected.add(code);
    renderControls();render();
@@ -373,11 +452,12 @@ function renderControls(){
   }else button.prepend('🌐 ');
   countryEl.append(button);
  });
- const current=document.getElementById('filter-current');
  const selection=selected.size===Object.keys(names).length?tr('allCountries'):selected.size+' '+tr('countriesShort');
  const chosenTopic=topic==='Összes'?tr('allTopics'):tr('topics')[topic];
- if(current)current.textContent=selection+' · '+chosenTopic;
- document.getElementById('filters-title').textContent=tr('filtersTitle');
+ document.getElementById('country-current').textContent=selection;
+ document.getElementById('topic-current').textContent=chosenTopic;
+ document.getElementById('country-title').textContent=tr('countryLabel');
+ document.getElementById('topic-title').textContent=tr('topicLabel');
  document.getElementById('show-news').textContent=tr('viewResults');
  const topicEl=document.getElementById('topics');topicEl.replaceChildren();
  topics.forEach(code=>{
@@ -388,8 +468,9 @@ function renderControls(){
 }
 function el(tag,text,klass){const n=document.createElement(tag);if(text!==null&&text!==undefined)n.textContent=text;if(klass)n.className=klass;return n}
 function render(){
- if(globeView)globeView.update(articles,selected);
- const chosen=articles.filter(a=>selected.has(a.country)&&(topic==='Összes'||a.topic===topic));
+ const dateScoped=articles.filter(inSelectedDate);
+ if(globeView)globeView.update(dateScoped,selected);
+ const chosen=dateScoped.filter(a=>selected.has(a.country)&&(topic==='Összes'||a.topic===topic));
  const dateDiff=(a,b)=>(Date.parse(b.published_utc)||0)-(Date.parse(a.published_utc)||0);
  function editorialScore(a){
   const age=Math.max(0,(Date.now()-(Date.parse(a.published_utc)||0))/3600000);
@@ -440,7 +521,7 @@ function render(){
   card.append(el('h2',item.title_hu));
   card.append(el('p',item.summary_hu));
   const publishedDate=item.published_utc?new Date(item.published_utc).toLocaleDateString(currentLang==='pt'?'pt-BR':currentLang,{year:'numeric',month:'long',day:'numeric'}):'';
-  const credit=el('small',(publishedDate?publishedDate+' · ':'')+(item.author?item.author+' · ':'')+(item.source_name||'')+(item.license?' · '+item.license:'')+' · '+tr('credit'));
+  const credit=el('small',(publishedDate?tr('sourceDate')+': '+publishedDate+' · ':'')+(item.author?item.author+' · ':'')+(item.source_name||'')+(item.license?' · '+item.license:'')+' · '+tr('credit'));
   credit.style.cssText='color:#526575;line-height:1.55;font-size:12px';
   card.append(credit);
   const link=el('a',tr('sourceLink'));
@@ -465,15 +546,16 @@ async function init(){
   if(!res.ok)throw new Error('Missing '+filename);
   const data=await res.json();
   articles=Array.isArray(data.articles)?data.articles:[];
+  setArchivePeriod(data.archive);
   document.getElementById('updated').textContent=tr('updated')+': '+(data.generated_utc?new Date(data.generated_utc).toLocaleString(currentLang==='pt'?'pt-BR':currentLang):'—');
  }catch(e){document.getElementById('updated').textContent=tr('loadError')}
  renderControls();render();
 }
 document.getElementById('sort').addEventListener('change',e=>{sortOrder=e.target.value;render()});
-const filtersPanel=document.getElementById('filters-panel');
-if(window.matchMedia('(min-width: 801px)').matches)filtersPanel.open=true;
+const countryPanel=document.getElementById('country-panel');
+const topicPanel=document.getElementById('topic-panel');
 document.getElementById('show-news').addEventListener('click',()=>{
- filtersPanel.open=false;
+ countryPanel.open=false;topicPanel.open=false;
  document.getElementById('feed').scrollIntoView({behavior:'smooth',block:'start'});
 });
 const globeToggle=document.getElementById('globe-toggle');

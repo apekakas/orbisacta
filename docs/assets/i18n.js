@@ -13,6 +13,7 @@ hu:{
  globeHelp:"Forgatás egy ujjal · Nagyítás két ujjal vagy a +/− gombbal",
  globeSource:"Térképi alapadatok: Natural Earth (közkincs). A jelölők tájékoztató jellegűek.",
  europe:"Európa",america:"Amerika",asia:"Ázsia",allNews:"Összes hír",
+ archiveLabel:"Dátum",archiveAll:"Mind a 7 nap",sourceDate:"Forrás dátuma",
  filtersTitle:"Országok és témák",viewResults:"Hírek megtekintése",countriesShort:"ország",countryLabel:"Országok",africa:"Afrika",oceania:"Óceánia",zoomIn:"Nagyítás",zoomOut:"Kicsinyítés",topicLabel:"Témakör",
  sort:"Rendezés",latest:"Legfrissebb elöl",importance:"Legfontosabb elöl",
  footer:"OrbisActa · Fejlesztői prototípus. Az AI-val készült összefoglalók nem helyettesítik az eredeti cikkeket vagy az emberi ellenőrzést.",
@@ -37,6 +38,7 @@ en:{
  globeHelp:"Drag to rotate · Pinch or use +/− to zoom",
  globeSource:"Map data: Natural Earth (public domain). Markers are indicative, not official borders.",
  europe:"Europe",america:"Americas",asia:"Asia",allNews:"All news",
+ archiveLabel:"Date",archiveAll:"All 7 days",sourceDate:"Source date",
  filtersTitle:"Countries and topics",viewResults:"View news",countriesShort:"countries",countryLabel:"Countries",africa:"Africa",oceania:"Oceania",zoomIn:"Zoom in",zoomOut:"Zoom out",topicLabel:"Topic",
  sort:"Sort by",latest:"Newest first",importance:"Most important first",
  footer:"OrbisActa · Editorial pilot. AI-generated summaries do not replace original reporting or human editorial verification.",
@@ -61,6 +63,7 @@ es:{
  globeHelp:"Arrastra para girar · Pellizca o usa +/− para ampliar",
  globeSource:"Datos cartográficos: Natural Earth (dominio público). Los marcadores son orientativos.",
  europe:"Europa",america:"América",asia:"Asia",allNews:"Todas las noticias",
+ archiveLabel:"Fecha",archiveAll:"Los 7 días",sourceDate:"Fecha de origen",
  filtersTitle:"Países y temas",viewResults:"Ver noticias",countriesShort:"países",countryLabel:"Países",africa:"África",oceania:"Oceanía",zoomIn:"Acercar",zoomOut:"Alejar",topicLabel:"Tema",
  sort:"Ordenar",latest:"Más recientes",importance:"Más importantes",
  footer:"OrbisActa · Proyecto editorial. Los resúmenes con IA no sustituyen las fuentes originales ni la revisión humana.",
@@ -85,6 +88,7 @@ fr:{
  globeHelp:"Glissez pour tourner · Pincez ou utilisez +/− pour zoomer",
  globeSource:"Données cartographiques : Natural Earth (domaine public). Les repères sont indicatifs.",
  europe:"Europe",america:"Amériques",asia:"Asie",allNews:"Toute l'actualité",
+ archiveLabel:"Date",archiveAll:"Les 7 jours",sourceDate:"Date de la source",
  filtersTitle:"Pays et thèmes",viewResults:"Voir les articles",countriesShort:"pays",countryLabel:"Pays",africa:"Afrique",oceania:"Océanie",zoomIn:"Zoom avant",zoomOut:"Zoom arrière",topicLabel:"Thème",
  sort:"Trier par",latest:"Plus récents",importance:"Plus importants",
  footer:"OrbisActa · Projet éditorial. Les résumés générés par IA ne remplacent ni les sources originales ni la vérification humaine.",
@@ -109,6 +113,7 @@ de:{
  globeHelp:"Zum Drehen ziehen · Zum Zoomen zwei Finger oder +/− verwenden",
  globeSource:"Kartendaten: Natural Earth (gemeinfrei). Markierungen dienen der Orientierung.",
  europe:"Europa",america:"Amerika",asia:"Asien",allNews:"Alle Nachrichten",
+ archiveLabel:"Datum",archiveAll:"Alle 7 Tage",sourceDate:"Quelldatum",
  filtersTitle:"Länder und Themen",viewResults:"Nachrichten ansehen",countriesShort:"Länder",countryLabel:"Länder",africa:"Afrika",oceania:"Ozeanien",zoomIn:"Vergrößern",zoomOut:"Verkleinern",topicLabel:"Thema",
  sort:"Sortierung",latest:"Neueste zuerst",importance:"Wichtigste zuerst",
  footer:"OrbisActa · Redaktionspilot. KI-Zusammenfassungen ersetzen weder Originalquellen noch menschliche Prüfung.",
@@ -133,6 +138,7 @@ pt:{
  globeHelp:"Arraste para girar · Aproxime com dois dedos ou use +/−",
  globeSource:"Dados cartográficos: Natural Earth (domínio público). Marcadores são indicativos.",
  europe:"Europa",america:"Américas",asia:"Ásia",allNews:"Todas as notícias",
+ archiveLabel:"Data",archiveAll:"Todos os 7 dias",sourceDate:"Data da fonte",
  filtersTitle:"Países e temas",viewResults:"Ver notícias",countriesShort:"países",countryLabel:"Países",africa:"África",oceania:"Oceania",zoomIn:"Ampliar",zoomOut:"Reduzir",topicLabel:"Tema",
  sort:"Ordenar",latest:"Mais recentes",importance:"Mais importantes",
  footer:"OrbisActa · Projeto editorial. Resumos gerados por IA não substituem as fontes originais nem a revisão humana.",
@@ -208,6 +214,10 @@ function apply(lang){
   button.setAttribute("aria-label",t(lang,button.dataset.globeZoom==="in"?"zoomIn":"zoomOut"));
   button.title=t(lang,button.dataset.globeZoom==="in"?"zoomIn":"zoomOut");
  });
+ const archiveLabel=document.getElementById("archive-label");
+ if(archiveLabel)archiveLabel.textContent=t(lang,"archiveLabel");
+ const archiveAll=document.getElementById("archive-all");
+ if(archiveAll)archiveAll.textContent=t(lang,"archiveAll");
  const toggle=document.getElementById("globe-toggle");if(toggle){const label=toggle.querySelector("span");if(label)label.textContent=t(lang,"showGlobe")}
  const note=document.getElementById("translation-note");
  if(note)note.textContent=t(lang,"translationNote");
