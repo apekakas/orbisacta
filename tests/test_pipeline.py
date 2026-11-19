@@ -155,7 +155,7 @@ def test_database_migration_from_v01(tmp_path):
     legacy.commit(); legacy.close()
     upgraded=oa.connect(db)
     cols={x[1] for x in upgraded.execute('PRAGMA table_info(articles)')}
-    assert {'author','license','license_url','rights_reference_url'}<=cols
+    assert {'author','license','license_url','rights_reference_url','context_hu'}<=cols
     upgraded.close()
 
 def test_diverse_ai_selection_balances_countries():
@@ -193,10 +193,10 @@ def test_multilingual_translation_validate_and_export(tmp_path):
                   for lang in il.TARGET_LANGUAGES}
     valid = il.validate_translations(translated)
     news_id = db.execute("SELECT id FROM articles").fetchone()[0]
-    for lang, (title, summary) in valid.items():
+    for lang, (title, summary, context) in valid.items():
         db.execute("""INSERT INTO article_translations
-            (article_id, lang, title, summary, translated_utc)
-            VALUES (?, ?, ?, ?, ?)""", (news_id, lang, title, summary, oa.now_utc()))
+            (article_id, lang, title, summary, context_text, translated_utc)
+            VALUES (?, ?, ?, ?, ?, ?)""", (news_id, lang, title, summary, context, oa.now_utc()))
     db.commit()
     assert oa.export_json(db, out) == 1
     en = json.loads((tmp_path / 'news-en.json').read_text())
@@ -316,3 +316,131 @@ def test_svg_flags_and_language_dependent_country_sorting():
         assert "countryAlphabet.compare(a[1],b[1])" in page
         assert 'src="./assets/flags/gb.svg"' in page
         assert 'src="./assets/flags/br.svg"' in page
+
+
+def test_statistics_must_be_present_in_two_supported_hungarian_facts():
+    from editorial_quality import check_numeric_facts
+    source = (
+        "The labour force report found an unemployment rate of 4.6 percent "
+        "in 2026 and an employment rate of 72.3 percent among working-age residents. "
+        "The office published the latest comparison to the previous period."
+    )
+    original = [
+        {"sentence_hu": "A munkanélküliségi ráta 4,6 százalékot ért el a vizsgált időszakban.",
+         "support_quote": "an unemployment rate of 4.6 percent"},
+        {"sentence_hu": "A foglalkoztatottsági ráta 72,3 százalék volt a munkaképes korúaknál.",
+         "support_quote": "an employment rate of 72.3 percent"},
+    ]
+    assert check_numeric_facts(source, original) == (True, "ok")
+    vague = [
+        {"sentence_hu": "A jelentés a munkanélküliség alakulását ismerteti.",
+         "support_quote": "an unemployment rate of 4.6 percent"},
+        {"sentence_hu": "A cikk a foglalkoztatás mutatóit is bemutatja.",
+         "support_quote": "an employment rate of 72.3 percent"},
+    ]
+    assert check_numeric_facts(source, vague)[0] is False
+    unsupported = [
+        {"sentence_hu": "A munkanélküliség 9,7 százalékot ért el.",
+         "support_quote": "an unemployment rate of 4.6 percent"},
+        original[1],
+    ]
+    assert check_numeric_facts(source, unsupported)[0] is False
+
+
+def test_years_dates_are_not_counted_as_two_statistics():
+    from editorial_quality import check_numeric_facts
+    source = "This report was published on 2026-11-19 and compares 2025 with 2026."
+    assert check_numeric_facts(source, [])[0] is True
+
+
+def test_country_glossary_requires_exact_source_support_and_two_sentence_maximum():
+    from editorial_quality import validated_background
+    source = (
+        "The PAYE scheme requires employers to deduct income tax directly "
+        "from workers' salaries. The council tax is a local property-based "
+        "tax used to finance municipal services in the United Kingdom."
+    )
+    items = [
+        {"term_original": "PAYE",
+         "support_quote": "The PAYE scheme requires employers to deduct income tax directly from workers' salaries.",
+         "explanation_hu": "A PAYE egy brit adólevonási rendszer, amelyben a munkáltató közvetlenül a munkabérből vonja le a jövedelemadót."},
+        {"term_original": "council tax",
+         "support_quote": "The council tax is a local property-based tax used to finance municipal services in the United Kingdom.",
+         "explanation_hu": "A council tax az Egyesült Királyságban alkalmazott helyi, ingatlanalapú adó, amelyből önkormányzati szolgáltatásokat finanszíroznak."},
+        {"term_original": "invented programme",
+         "support_quote": "A fabricated quotation not in the original article.",
+         "explanation_hu": "Ez a forrásban nem szereplő, ezért nem közölhető fogalom."},
+    ]
+    valid = validated_background(source, items)
+    assert "PAYE" in valid and "council tax" in valid
+    assert valid.count(".") == 2
+    assert validated_background(source, [items[2]]) == ""
+
+
+def test_country_glossary_translation_and_export(tmp_path):
+    import international as il
+    con = oa.connect(tmp_path / "context.sqlite3")
+    oa.insert_entries(con, SRC, oa.parse_feed(RSS))
+    con.execute("""UPDATE articles SET status='published',
+                   title_hu='Vizsgálati hír ellenőrzött címmel',
+                   summary_hu='Első tény. Második tény. Harmadik tény. Negyedik tény. Ötödik tény.',
+                   context_hu='A helyi fogalom rövid értelmezése a forrás szerint.'""")
+    con.commit()
+    context = ("The country-specific programme is a national scheme for "
+               "supporting residents through local public administration.")
+    payload = {lang: {
+        "title": "Verified international news headline",
+        "sentences": [f"This is the verified factual sentence number {i}." for i in range(1,6)],
+        "context": context
+    } for lang in il.TARGET_LANGUAGES}
+    translations = il.validate_translations(payload, "A helyi fogalom értelmezése.")
+    article_id = con.execute("SELECT id FROM articles").fetchone()[0]
+    for lang, (title, summary, translated_context) in translations.items():
+        con.execute("""INSERT INTO article_translations
+            (article_id, lang, title, summary, context_text, translated_utc)
+            VALUES (?,?,?,?,?,?)""",
+            (article_id, lang, title, summary, translated_context, oa.now_utc()))
+    con.commit()
+    out = tmp_path / "news.json"
+    assert oa.export_json(con, out) == 1
+    hu = json.loads(out.read_text())["articles"][0]
+    en = json.loads((tmp_path / "news-en.json").read_text())["articles"][0]
+    assert hu["context_text"].startswith("A helyi fogalom")
+    assert en["context_text"] == context
+    assert len(en["summary_hu"].split(". ")) == 5
+    con.close()
+
+
+def test_country_glossary_translations_reject_missing_or_extra_sentences():
+    import international as il
+    payload = {lang: {
+        "title": "Verified news story headline",
+        "sentences": [f"This is a checked sentence number {i}." for i in range(1,6)],
+        "context": ""
+    } for lang in il.TARGET_LANGUAGES}
+    try:
+        il.validate_translations(payload, "Egy magyar háttérmondat.")
+        assert False, "Missing translated glossary must be rejected"
+    except ValueError:
+        pass
+    for item in payload.values():
+        item["context"] = ("A factual explanation of the local term. "
+                           "A second explanation with more factual detail. "
+                           "An impermissible third explanatory sentence.")
+    try:
+        il.validate_translations(payload, "Egy magyar háttérmondat.")
+        assert False, "Glossary must be limited to two sentences"
+    except ValueError:
+        pass
+
+
+def test_glossary_is_rendered_on_all_six_locale_pages():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "docs"
+    for lang in ("hu", "en", "es", "fr", "de", "pt"):
+        page = (root / lang / "index.html").read_text(encoding="utf-8")
+        assert "item.context_text" in page
+        assert "tr('backgroundTitle')" in page
+        assert ".article-context" in page
+    dictionary = (root / "assets" / "i18n.js").read_text(encoding="utf-8")
+    assert dictionary.count('backgroundTitle:') == 6
