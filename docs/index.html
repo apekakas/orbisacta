@@ -18,6 +18,9 @@ button.chip{background:white;color:var(--ink);border:1px solid #cad4dc;border-ra
 button.chip[aria-pressed=true]{background:var(--navy);color:white;border-color:var(--navy)}
 button.chip:focus-visible{outline:3px solid #69c9c2;outline-offset:2px}
 .meta{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:30px 0 16px;color:var(--sub);font-size:12px;flex-wrap:wrap}
+.sort-controls{display:flex;align-items:center;gap:9px}.sort-controls label{font-size:12px;color:var(--sub)}
+.sort-controls select{border:1px solid #cad4dc;border-radius:8px;padding:8px 12px;color:var(--ink);background:white;font-size:13px}
+.sort-controls select:focus-visible{outline:3px solid #69c9c2;outline-offset:2px}
 .count{font-weight:700;color:var(--ink)}.feed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 article{border:1px solid var(--line);padding:22px;border-radius:12px;display:flex;flex-direction:column;gap:12px;min-height:230px}
 .toprow{display:flex;justify-content:space-between;gap:12px;color:var(--teal);font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.06em}
@@ -38,28 +41,35 @@ footer{max-width:1100px;margin:auto;padding:25px 22px 50px;color:var(--sub);font
     <div><div class="group-label">Országok (legfeljebb 10)</div><div class="chips" id="countries"></div></div>
     <div><div class="group-label">Témakör</div><div class="chips" id="topics"></div></div>
   </section>
-  <div class="meta"><div class="count" id="count">Hírek betöltése…</div><div id="updated"></div></div>
+  <div class="meta"><div class="count" id="count">Hírek betöltése…</div><div class="sort-controls"><label for="sort">Rendezés</label><select id="sort"><option value="latest">Legfrissebb elöl</option><option value="importance">Legfontosabb elöl</option></select></div><div id="updated"></div></div>
   <section class="feed" id="feed" aria-live="polite"></section>
 </main>
 <footer>OrbisActa · Fejlesztői prototípus. A géppel készített összefoglalók nem helyettesítik az eredeti cikket vagy az emberi szerkesztői ellenőrzést. Az adatforrásokra külön felhasználási és hivatkozási feltételek vonatkoznak.</footer>
 <script>
-const names={HU:'Magyarország',DE:'Németország',US:'Egyesült Államok',GB:'Egyesült Királyság',EU:'Európai Unió',WORLD:'Világ'};
+const names={HU:'Magyarország',DE:'Németország',FR:'Franciaország',IT:'Olaszország',JP:'Japán',BR:'Brazília',US:'Egyesült Államok',GB:'Egyesült Királyság',EU:'Európai Unió',WORLD:'Világ'};
 const topics=['Összes','politika','gazdaság','tudomány','sport','kultúra','egyéb'];
-let articles=[],internalItems=[],selected=new Set(['HU','DE','US','GB','EU','WORLD']),topic='Összes';
+let articles=[],internalItems=[],selected=new Set(Object.keys(names)),topic='Összes',sortOrder='latest';
 const feed=document.getElementById('feed');
 function btn(label,pressed,click){const b=document.createElement('button');b.className='chip';b.textContent=label;b.setAttribute('aria-pressed',String(pressed));b.onclick=click;return b}
-function renderControls(){const countryEl=document.getElementById('countries');countryEl.replaceChildren();Object.entries(names).forEach(([code,name])=>countryEl.append(btn(name,selected.has(code),()=>{if(selected.has(code))selected.delete(code);else if(selected.size<10)selected.add(code);renderControls();render()})));
+function renderControls(){const countryEl=document.getElementById('countries');countryEl.replaceChildren();
+countryEl.append(btn('Összes ország',selected.size===Object.keys(names).length,()=>{selected=new Set(Object.keys(names));renderControls();render()}));
+Object.entries(names).forEach(([code,name])=>{const total=articles.filter(a=>a.country===code).length;
+countryEl.append(btn(name+' ('+total+')',selected.has(code),()=>{if(selected.has(code))selected.delete(code);else if(selected.size<10)selected.add(code);renderControls();render()}))});
 const topicEl=document.getElementById('topics');topicEl.replaceChildren();topics.forEach(t=>topicEl.append(btn(t==='Összes'?t:t.charAt(0).toUpperCase()+t.slice(1),topic===t,()=>{topic=t;renderControls();render()})))}
 function el(tag,text,klass){const n=document.createElement(tag);if(text)n.textContent=text;if(klass)n.className=klass;return n}
-function render(){const visible=articles.filter(a=>selected.has(a.country)&&(topic==='Összes'||a.topic===topic));document.getElementById('count').textContent=visible.length+' ellenőrzött hír';feed.replaceChildren();
-if(!visible.length){const box=el('div',null,'empty');box.append(el('strong','Még nincs publikálható összefoglaló.'));
-box.append(el('p','Még nem készült ellenőrzött AI-összefoglaló. Az RSS-gyűjtéshez internet, az AI feldolgozáshoz API-kulcs szükséges. A napló a data/last_run.json fájlban található.'));feed.append(box);renderInternal();return}
-for(const item of visible){const card=el('article');const top=el('div',null,'toprow');top.append(el('span',(names[item.country]||item.country)+' · '+item.topic));top.append(el('span',item.source_name||''));card.append(top);card.append(el('h2',item.title_hu));card.append(el('p',item.summary_hu));const credit=el('small',(item.author?item.author+' · ':'')+(item.source_name||'')+(item.license?' · '+item.license:'')+' · AI-val átdolgozott magyar összefoglaló');credit.style.cssText='color:#526575;line-height:1.55;font-size:12px';card.append(credit);const link=el('a','Eredeti hír és forrásmegjelölés');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';card.append(link);feed.append(card)}}
+function render(){const visible=articles.filter(a=>selected.has(a.country)&&(topic==='Összes'||a.topic===topic)).sort((a,b)=>{
+const dateDiff=(Date.parse(b.published_utc)||0)-(Date.parse(a.published_utc)||0);
+return sortOrder==='importance' ? ((b.importance||0)-(a.importance||0))||dateDiff : dateDiff;
+});document.getElementById('count').textContent=visible.length+' ellenőrzött hír'+(visible.length!==articles.length?' a szűrés után':'');feed.replaceChildren();
+if(!visible.length){const box=el('div',null,'empty');box.append(el('strong','Nincs még hír a kiválasztott szűrőkhöz.'));
+box.append(el('p','Válassz másik országot vagy témát, vagy kattints az Összes ország gombra. Az új országok hírkínálata fokozatosan bővül.'));feed.append(box);return}
+for(const item of visible){const card=el('article');const top=el('div',null,'toprow');top.append(el('span',(names[item.country]||item.country)+' · '+item.topic));top.append(el('span',item.source_name||''));card.append(top);card.append(el('h2',item.title_hu));card.append(el('p',item.summary_hu));const publishedDate=item.published_utc?new Date(item.published_utc).toLocaleDateString('hu-HU',{year:'numeric',month:'long',day:'numeric'}):'';
+const credit=el('small',(publishedDate?publishedDate+' · ':'')+(item.author?item.author+' · ':'')+(item.source_name||'')+(item.license?' · '+item.license:'')+' · AI-val átdolgozott magyar összefoglaló');credit.style.cssText='color:#526575;line-height:1.55;font-size:12px';card.append(credit);const link=el('a','Eredeti hír és forrásmegjelölés');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';card.append(link);feed.append(card)}}
 function renderInternal(){const items=internalItems.filter(a=>selected.has(a.country)&&(topic==='Összes'||a.topic_hint===topic)).slice(0,24);if(!items.length)return;
 const label=el('div','BELSŐ RSS-TESZT: ÉLŐ FORRÁSOKBÓL GYŰJTÖTT, JOGILAG NEM PUBLIKÁLHATÓ CÍMSOROK','internal-label');label.style.cssText='grid-column:1/-1;color:#99601f;font-size:11px;font-weight:800;letter-spacing:.06em;margin-top:6px';feed.append(label);
 for(const item of items){const card=el('article');card.style.cssText='min-height:150px;background:#fffaf3;border-style:dashed';card.append(el('div',(names[item.country]||item.country)+' · '+item.source_name,'toprow'));card.append(el('h2',item.title_original));const link=el('a','Eredeti cikk (belső teszt)');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';card.append(link);feed.append(card)}
 }
 async function init(){renderControls();try{const res=await fetch('./news.json',{cache:'no-store'});if(!res.ok)throw new Error('missing news.json');const data=await res.json();articles=Array.isArray(data.articles)?data.articles:[];
-document.getElementById('updated').textContent='Frissítve: '+(data.generated_utc?new Date(data.generated_utc).toLocaleString('hu-HU'):'—')}catch(e){document.getElementById('updated').textContent='A híradat még nem készült el.'}try{const r=await fetch('./internal-preview.json',{cache:'no-store'});if(r.ok){const raw=await r.json();internalItems=raw.internal_only?raw.items:[]}}catch(e){}render()}init();
+document.getElementById('updated').textContent='Frissítve: '+(data.generated_utc?new Date(data.generated_utc).toLocaleString('hu-HU'):'—')}catch(e){document.getElementById('updated').textContent='A híradat még nem készült el.'}try{const r=await fetch('./internal-preview.json',{cache:'no-store'});if(r.ok){const raw=await r.json();internalItems=raw.internal_only?raw.items:[]}}catch(e){}renderControls();render()}document.getElementById('sort').addEventListener('change',e=>{sortOrder=e.target.value;render()});init();
 </script>
 </body></html>

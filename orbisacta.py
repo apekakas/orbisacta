@@ -30,7 +30,7 @@ PUBLISH_PATH = BASE / "docs" / "news.json"
 RUN_REPORT_PATH = BASE / "data" / "last_run.json"
 PUBLIC_STATUS_PATH = BASE / "docs" / "site-status.json"
 TOPICS = ("politika", "gazdaság", "tudomány", "sport", "kultúra", "egyéb")
-COUNTRIES = {"HU": "Magyarország", "DE": "Németország", "US": "Egyesült Államok", "GB": "Egyesült Királyság", "EU": "Európai Unió", "WORLD": "Világ"}
+COUNTRIES = {"HU": "Magyarország", "DE": "Németország", "FR": "Franciaország", "IT": "Olaszország", "JP": "Japán", "BR": "Brazília", "US": "Egyesült Államok", "GB": "Egyesült Királyság", "EU": "Európai Unió", "WORLD": "Világ"}
 
 
 def now_utc():
@@ -288,6 +288,34 @@ Importance reflects the newsworthiness for residents, not headline sensationalis
     return json.loads(response.choices[0].message.content)
 
 
+def select_diverse_pending(rows, limit):
+    """Balance the AI budget across source-country buckets.
+
+    The source bucket is provisional: a WORLD story may receive a country label
+    after AI classification. Within each bucket, the freshest story comes first.
+    """
+    buckets = {}
+    for row in rows:
+        buckets.setdefault(row["country"], []).append(row)
+    order = sorted(
+        buckets,
+        key=lambda country: buckets[country][0]["published_utc"] or "",
+        reverse=True,
+    )
+    selected = []
+    while len(selected) < limit:
+        advanced = False
+        for country in order:
+            if buckets[country]:
+                selected.append(buckets[country].pop(0))
+                advanced = True
+                if len(selected) >= limit:
+                    break
+        if not advanced:
+            break
+    return selected
+
+
 def process(con, sources, max_items=12, model="gpt-4o-mini"):
     if not os.environ.get("OPENAI_API_KEY"):
         print("OPENAI_API_KEY nincs beállítva; AI-feldolgozás kihagyva.")
@@ -306,10 +334,11 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
     # Do not spend API credits processing stale articles. Also reject feeds
     # without a trustworthy publication timestamp until reviewed.
     recent_cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat(timespec="seconds")
-    rows = con.execute("""SELECT * FROM articles WHERE status='pending_ai'
+    candidates = con.execute("""SELECT * FROM articles WHERE status='pending_ai'
                          AND published_utc >= ?
                          ORDER BY published_utc DESC LIMIT ?""",
-                       (recent_cutoff, max_items)).fetchall()
+                       (recent_cutoff, max(200, max_items * 20))).fetchall()
+    rows = select_diverse_pending(candidates, max_items)
     processed = published = 0
     for row in rows:
         if row["source_id"] not in approved:

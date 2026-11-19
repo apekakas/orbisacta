@@ -157,3 +157,22 @@ def test_database_migration_from_v01(tmp_path):
     cols={x[1] for x in upgraded.execute('PRAGMA table_info(articles)')}
     assert {'author','license','license_url','rights_reference_url'}<=cols
     upgraded.close()
+
+def test_diverse_ai_selection_balances_countries():
+    rows = [
+        {'id': 'us-1', 'country': 'US', 'published_utc': '2026-11-19T17:00:00+00:00'},
+        {'id': 'us-2', 'country': 'US', 'published_utc': '2026-11-19T16:00:00+00:00'},
+        {'id': 'us-3', 'country': 'US', 'published_utc': '2026-11-19T15:00:00+00:00'},
+        {'id': 'hu-1', 'country': 'HU', 'published_utc': '2026-11-19T14:00:00+00:00'},
+        {'id': 'jp-1', 'country': 'JP', 'published_utc': '2026-11-19T13:00:00+00:00'},
+    ]
+    assert [r['id'] for r in oa.select_diverse_pending(rows, 4)] == [
+        'us-1', 'hu-1', 'jp-1', 'us-2'
+    ]
+
+
+def test_new_country_sources_are_registered():
+    sources = oa.load_sources()
+    ids = {s['country'] for s in sources}
+    assert {'FR', 'IT', 'JP', 'BR'} <= ids
+    assert all(s['ai_approved'] for s in sources if s['country'] in {'FR', 'IT', 'JP', 'BR'})
