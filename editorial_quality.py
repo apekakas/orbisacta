@@ -89,10 +89,12 @@ def check_numeric_facts(source_text, points):
 
 
 def validated_background(source_text, terms):
-    """Return at most two one-sentence country-specific concept explanations.
+    """Return at most two one-sentence explanations of unfamiliar terms.
 
-    Fail safely (omit an unsupported explanation) instead of publishing
-    a likely hallucination. The supporting text is not exposed publicly.
+    Covers country-specific, scientific or economic terminology only when
+    an exact original-text quotation supports the definition. Omit any
+    unexplained terms instead of making up outside context.
+    The supporting quotation is never exposed publicly.
     """
     if not isinstance(terms, list):
         return ""

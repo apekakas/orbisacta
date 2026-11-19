@@ -183,3 +183,29 @@ aktualizálni kell.
 - A meglévő 10 AI-cikk és 3 ötnyelvű fordítás futtatásonkénti
   költségkorlátja változatlan. Az országszűrés és a hírportál
   nyelvválasztása továbbra is független egymástól.
+
+
+## Olvashatóbb hírkártyák és fogalommagyarázatok
+
+- Mind a hat nyelven a cikkek témája pasztell árnyalatú keretet,
+  témacímkét és a témaválasztóval egyező ikont kap. A cikk fejlécében
+  szerepel a hír földrajzi besorolásának országzászlója, illetve
+  világhír esetén a 🌐 jelzés. A zászló a hírhez társított országot
+  jelzi, nem feltétlenül a hírközlő szervezet székhelyét.
+- Amikor a forrás alátámasztja, a cikk szövegdoboza ALATT,
+  elkülönülő pasztell sávban „Fogalmak röviden” magyarázat
+  jelenik meg. Legfeljebb két bővített mondat.
+- A fogalom lehet országspecifikus intézmény, jogszabály,
+  rövidítés, tudományos/technikai vagy gazdasági szakkifejezés.
+  Csak az eredeti cikkben igazolható, forrásszövegre támaszkodó
+  meghatározás jelenhet meg. Ellenőrizetlen szakkifejezéshez
+  nem generálunk biztosként állított definíciót.
+- A már korábban publikált híreknél, ahol nincs ellenőrzött
+  fogalommagyarázat, ez a külön mező nem látszik.
+  A bővített utasítás az újonnan feldolgozott híreket érinti,
+  a régi cikkek visszamenőleges újragenerálása nélkül.
+- Androidon a földgömb nagyítását látható százalék jelzi;
+  ez a kijelzés egyszerű szövegelemből áll és minden újrarajzoláskor
+  frissül. A +/− gombok és a kétujjas gesztus megmaradtak.
+- A meglévő 10 hír és 3 ötnyelvű fordítás / futás
+  korlát változatlan.

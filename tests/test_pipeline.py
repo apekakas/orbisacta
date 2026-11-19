@@ -524,3 +524,50 @@ def test_globe_native_multitouch_and_obvious_mobile_zoom_controls():
     assert 'const initialScale=window.matchMedia("(max-width:680px)").matches?205:192;' in globe
     assert 'button.dataset.globeZoom==="in"?1.4:1/1.4' in globe
     assert 'document.getElementById("globe-zoom-level")' in globe
+
+
+def test_pastel_topic_story_tiles_flags_and_separate_glossaries():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "docs"
+    for language in ("hu", "en", "es", "fr", "de", "pt"):
+        page = (root / language / "index.html").read_text(encoding="utf-8")
+        assert "tile.dataset.topic=topicCode" in page
+        assert "topicIcons[topicCode]" in page
+        assert "countryFlagAssets[item.country]" in page
+        assert "flag.src='./assets/flags/'" in page
+        assert "tile.append(card)" in page
+        assert "tile.append(context)" in page
+        assert page.index("tile.append(card)") < page.index("tile.append(context)")
+        assert "item.context_text.trim()" in page
+        assert "tr('backgroundTitle')" in page
+        assert "feed.append(tile)" in page
+        for topic in ("politika", "gazdaság", "tudomány", "sport", "kultúra", "egyéb"):
+            assert '.story-tile[data-topic="' + topic + '"]' in page
+        assert 'class="globe-zoom-value" id="globe-zoom-level"' in page
+        assert '<output id="globe-zoom-level"' not in page
+    dictionary=(root / "assets" / "i18n.js").read_text(encoding="utf-8")
+    assert 'backgroundTitle:"Fogalmak röviden"' in dictionary
+    assert dictionary.count("backgroundTitle:") == 6
+
+
+def test_globe_numeric_zoom_label_updates_with_redraw_and_buttons():
+    from pathlib import Path
+    script = (Path(__file__).resolve().parents[1] /
+              "docs" / "assets" / "globe.js").read_text(encoding="utf-8")
+    assert 'const zoomIndicator=document.getElementById("globe-zoom-level")' in script
+    assert 'zoomIndicator.dataset.zoomPercent=String(percent)' in script
+    assert 'zoomIndicator.textContent=percent+"%"' in script
+    assert 'scale=clampZoom(scale*factor)' in script
+    assert "updateZoomStatus()" in script
+    assert 'svg.addEventListener("touchmove"' in script
+
+
+def test_editorial_glossary_covers_unfamiliar_terms_without_added_ai_calls():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    backend=(root / "orbisacta.py").read_text(encoding="utf-8")
+    assert "technical/scientific concepts" in backend
+    assert "labour-market indicators" in backend
+    assert "source_text must explicitly contain the term" in backend
+    assert "AT MOST TWO sentences" in backend
+    assert "--max-translations" in backend
