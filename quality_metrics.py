@@ -23,7 +23,8 @@ def source_date(value):
         return None
 
 
-def publishable_metrics(articles, country_names, topics, archive, generated_utc):
+def publishable_metrics(articles, country_names, topics, archive, generated_utc,
+                        publisher_lookup=None):
     """Build seven-day, per-country/per-topic indicators from public article rows.
 
     The numeric test detects two different statistical values in the Hungarian
@@ -40,19 +41,23 @@ def publishable_metrics(articles, country_names, topics, archive, generated_utc)
         and start <= date <= end
     ]
     enriched = []
+    publisher_lookup = publisher_lookup or {}
     for row in eligible:
         numbers = numeric_values(row.get("summary_hu") or "", require_unit=True)
         enriched.append({
             "country": row.get("country") or "WORLD",
             "topic": row.get("topic") or "egyéb",
-            "source_name": (row.get("source_name") or "").strip(),
+            "publisher": publisher_lookup.get(
+                (row.get("source_name") or "").strip(),
+                (row.get("source_name") or "").strip()
+            ),
             "two_numeric_facts": len(numbers) >= 2,
             "has_explainer": bool((row.get("context_text") or "").strip()),
             "source_date": source_date(row.get("published_utc")),
         })
 
     def summarize(rows):
-        publishers = Counter(row["source_name"] for row in rows if row["source_name"])
+        publishers = Counter(row["publisher"] for row in rows if row["publisher"])
         topics_count = Counter(row["topic"] for row in rows)
         count = len(rows)
         return {
@@ -85,7 +90,7 @@ def publishable_metrics(articles, country_names, topics, archive, generated_utc)
             "basis": "published_Hungarian_source_dated_news_only",
             "two_numeric_facts": "two distinct numeric statistical values detected in summary text; NOT independently reverified against original source",
             "with_explainer": "nonempty source-gated explanatory field",
-            "distinct_publishers": "distinct published source names, not number of RSS feeds",
+            "distinct_publishers": "distinct editorial publishers after unifying their RSS feeds; not number of RSS feeds",
             "not_included": ["visitor_popularity", "personal_data", "unpublished_stories", "AI_review_errors"],
         },
         "total": summarize(enriched),
@@ -95,9 +100,9 @@ def publishable_metrics(articles, country_names, topics, archive, generated_utc)
 
 
 def export_quality_report(articles, country_names, topics, archive, generated_utc,
-                          destination: Path):
+                          destination: Path, publisher_lookup=None):
     report = publishable_metrics(
-        articles, country_names, topics, archive, generated_utc)
+        articles, country_names, topics, archive, generated_utc, publisher_lookup)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

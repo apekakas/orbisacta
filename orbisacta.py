@@ -490,9 +490,14 @@ def export_json(con, destination: Path = PUBLISH_PATH):
     # Public editorial metrics reuse already approved Hungarian summaries.
     # No additional source fetching or AI requests.
     from quality_metrics import export_quality_report
+    publishers = {
+        s["name"]: s.get("publisher", s["name"])
+        for s in load_sources()
+    }
     export_quality_report(
         payload["articles"], COUNTRIES, list(TOPICS), archive,
-        payload["generated_utc"], destination.parent / "quality.json")
+        payload["generated_utc"], destination.parent / "quality.json",
+        publisher_lookup=publishers)
     return len(rows)
 
 
