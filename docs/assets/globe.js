@@ -23,6 +23,8 @@ function svgNode(tag,attrs){
 }
 function put(parent,tag,attrs){const e=svgNode(tag,attrs);parent.append(e);return e}
 function mount(options){
+ const tr=key=>options.translate?options.translate(key):key;
+ const countryName=code=>options.countryName?options.countryName(code):(locations[code]||{}).name||code;
  const svg=document.getElementById("globe-map");
  const stage=document.getElementById("globe-stage");
  const note=document.getElementById("globe-selection");
@@ -30,7 +32,7 @@ function mount(options){
  if(!svg||!stage)return null;
  if(!window.d3||!window.d3.geoOrthographic){
    stage.setAttribute("data-globe-unavailable","true");
-   if(note)note.textContent="A földgömb betöltése nem sikerült. Az országválasztó gombokkal továbbra is böngészhetsz.";
+   if(note)note.textContent=tr("mapError");
    return {update:()=>{},focus:()=>{}};
  }
  const d3=window.d3;
@@ -53,12 +55,12 @@ function mount(options){
  const pins=put(svg,"g",{class:"globe-pins"});
  const markerNodes={};
  for(const [code,loc] of Object.entries(locations)){
-   const group=put(pins,"g",{class:"globe-pin",role:"button",tabindex:"0","aria-label":loc.name+" híreinek kiválasztása"});
+   const group=put(pins,"g",{class:"globe-pin",role:"button",tabindex:"0","aria-label":tr("chooseCountry")+" "+countryName(code)});
    const halo=put(group,"circle",{r:13,fill:"#1cd5bc",opacity:".16"});
    const dot=put(group,"circle",{r:5.8,fill:"#f7fffd",stroke:"#005b60","stroke-width":"2"});
-   const title=put(group,"title");title.textContent=loc.name;
+   const title=put(group,"title");title.textContent=countryName(code);
    const tag=put(group,"text",{x:12,y:-10,"font-size":"13","font-weight":"700",fill:"#ffffff",stroke:"#0b2837","stroke-width":"3","paint-order":"stroke"});
-   tag.textContent=loc.name;
+   tag.textContent=countryName(code);
    group.addEventListener("click",ev=>{ev.stopPropagation();focus(loc.coord);if(options.onCountry)options.onCountry(code)});
    group.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();focus(loc.coord);if(options.onCountry)options.onCountry(code)}});
    markerNodes[code]={group,halo,dot,tag};
@@ -93,13 +95,13 @@ function mount(options){
    if(total)total.textContent=String(items.length);
    if(note){
      if(active.size===Object.keys(locations).length+1){
-       note.textContent="Minden ország és világkitekintés – kattints egy ország jelölőjére a szűréshez.";
+       note.textContent=tr("globeAll");
      }else if(active.size===1){
        const code=Array.from(active)[0];
        const count=items.filter(a=>a.country===code).length;
-       note.textContent=(locations[code]?locations[code].name:code==="WORLD"?"Világhírek":code)+": "+count+" publikált hír.";
+       note.textContent=countryName(code)+": "+count+" "+tr("globeStory");
      }else{
-       note.textContent=active.size+" kiválasztott földrajzi nézet – a gombokkal tovább szűrhetsz.";
+       note.textContent=active.size+" "+tr("globeFiltered");
      }
    }
    redraw();
@@ -136,7 +138,7 @@ function mount(options){
  fetch("./assets/earth-land.geojson",{cache:"force-cache"})
    .then(r=>{if(!r.ok)throw Error("Land data HTTP "+r.status);return r.json()})
    .then(data=>{if(data&&data.type==="FeatureCollection"){land=data;redraw()}})
-   .catch(()=>{if(note)note.textContent="A térképvonalak nem töltődtek be, az országjelölők használhatók.";});
+   .catch(()=>{if(note)note.textContent=tr("mapLinesError");});
  return {update,focus};
 }
 window.OrbisGlobe={mount};
