@@ -84,6 +84,20 @@ function render(report){
  const topics=Object.entries(report.topics).map(([code,item])=>({
   ...item,display_name:(t("topics")||{})[code]||code
  })).sort((a,b)=>b.published-a.published||collation.compare(a.display_name,b.display_name));
+ // Editorial attention items are based on observed coverage, not predictions.
+ const attention=document.getElementById("quality-attention");
+ attention.replaceChildren();
+ const brief=names=>names.slice(0,7).join(", ")+(names.length>7?" (+"+(names.length-7)+")":"");
+ const attentionLine=(key,names)=>{
+  if(!names.length)return;
+  const p=elem("p");
+  p.append(elem("strong",t(key)+": "),document.createTextNode(brief(names)));
+  attention.append(p);
+ };
+ attentionLine("qualityNoCountry",countries.filter(item=>item.published===0).map(item=>item.display_name));
+ attentionLine("qualityOnlyOne",countries.filter(item=>item.published>=3&&item.distinct_publishers===1).map(item=>item.display_name));
+ attentionLine("qualityNoTopic",topics.filter(item=>item.published===0).map(item=>item.display_name));
+ if(!attention.childElementCount)attention.append(elem("p",t("qualityNoGaps")));
  table(document.getElementById("quality-country-table"),columns,countries);
  table(document.getElementById("quality-topic-table"),
        [t("qualityTopicCol"),...columns.slice(1)],topics);
