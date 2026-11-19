@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "enabled": false,
+  "provider": null,
+  "providerAccountId": null,
+  "adSlots": [
+    "top-banner",
+    "in-feed"
+  ],
+  "adScriptsAllowed": false,
+  "visitorGeolocation": false,
+  "requiresConsentManagement": true,
+  "notes": "No advertising network, trackers or ad personalization are active. Use a certified CMP and verify privacy/legal requirements before enabling ads."
+}
