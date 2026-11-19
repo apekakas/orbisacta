@@ -1,14 +1,19 @@
 import json
+from datetime import datetime, timezone
+from email.utils import format_datetime
 from pathlib import Path
 import sqlite3
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import orbisacta as oa
 
-RSS = b'''<?xml version="1.0"?><rss version="2.0"><channel><title>Test</title>
+# The simulated story must be fresh for the 7-day editorial cutoff.
+# Use dynamic fixture dates so CI doesn't start failing a week after creation.
+TEST_DATE = format_datetime(datetime.now(timezone.utc), usegmt=True)
+RSS = f'''<?xml version="1.0"?><rss version="2.0"><channel><title>Test</title>
 <item><title>Economy &amp; markets</title><link>https://example.org/a?utm_source=x</link>
-<description>Market description</description><pubDate>Thu, 12 Nov 2026 12:00:00 GMT</pubDate></item>
-</channel></rss>'''
+<description>Market description</description><pubDate>{TEST_DATE}</pubDate></item>
+</channel></rss>'''.encode('utf-8')
 ATOM = b'''<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>New item</title>
 <link rel="alternate" href="https://example.org/b"/><updated>2026-11-12T13:10:00Z</updated>
 <summary>Atom desc</summary></entry></feed>'''
@@ -20,7 +25,7 @@ def test_rss_and_atom_parsers():
     assert len(rss) == 1
     assert rss[0]['url'] == 'https://example.org/a'
     assert rss[0]['title'] == 'Economy & markets'
-    assert rss[0]['published_utc'].startswith('2026-11-12')
+    assert rss[0]['published_utc'] == oa.parse_date(TEST_DATE)
     assert oa.parse_feed(ATOM)[0]['url'] == 'https://example.org/b'
 
 def test_deduplicate_and_rights(tmp_path):
