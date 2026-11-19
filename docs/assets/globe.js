@@ -42,7 +42,8 @@ function mount(options){
    return {update:()=>{},focus:()=>{}};
  }
  const d3=window.d3;
- let center=[12,47],scale=192,land=null,items=[],active=new Set();
+ const initialScale=window.matchMedia("(max-width:680px)").matches?255:192;
+ let center=[12,47],scale=initialScale,land=null,items=[],active=new Set();
  const minScale=110,maxScale=560;
  const clampZoom=value=>Math.max(minScale,Math.min(maxScale,value));
  function zoomBy(factor){
@@ -51,7 +52,7 @@ function mount(options){
  }
  function updateZoomStatus(){
    const indicator=document.getElementById("globe-zoom-level");
-   if(indicator)indicator.textContent=Math.round(scale/192*100)+"%";
+   if(indicator)indicator.textContent=Math.round(scale/initialScale*100)+"%";
  }
  const projection=d3.geoOrthographic().scale(scale).translate([360,218]).rotate([-center[0],-center[1]]).clipAngle(90).precision(0.75);
  const path=d3.geoPath(projection);
