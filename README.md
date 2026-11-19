@@ -136,3 +136,32 @@ aktualizálni kell.
   bekapcsolva**. Később agregált, adatvédelmileg megfelelő analitikai
   mérés vagy külön országos keresési trendjelzés építhető be, de a
   keresési trend nem azonos a cikk olvasottságával.
+
+
+## Számszerű tények és országfogalmak (új szerkesztőségi szabály)
+
+- Ha a hír alapjául szolgáló cikkben legalább **két fontos, számszerűen
+  leírt statisztikai eredmény** található, az ötmondatos magyar összefoglalóban
+  legalább két, különböző számadatnak szerepelnie kell. Az ellenőrző
+  algoritmus az eredeti cikk és az AI által mellékelt szó szerinti
+  bizonyító szövegrészlet számértékeit is összeveti az összefoglalóval.
+  Az önmagukban álló éveket és ISO-dátumokat nem tekinti statisztikának.
+- Két adatra vonatkozó szabály csak akkor érvényes, amikor a cikk tényleg
+  tartalmaz legalább két érdemi, számként felismerhető statisztikát.
+  Egyetlen valós adat esetén nem szabad másodikat kitalálni.
+- Az AI a cikkben megjelenő országfüggő törvény, intézmény vagy fogalom
+  mellé **legfeljebb két külön háttérmagyarázó mondatot** készíthet;
+  ezek az ötmondatos hírösszefoglalón felül, külön blokkban jelennek meg.
+  A magyarázat az eredeti forrásban megjelenő fogalomhoz és bizonyító
+  szöveghelyhez kötött. Ha nincs elegendő forrás, nem jelenik meg.
+- A forrásadatok és a forrásból kiragadott bizonyító idézetek továbbra sem
+  kerülnek ki a nyilvános JSON-ba; csak az ellenőrzött saját összefoglaló
+  és a kiegészítő szöveg jelenik meg.
+- A hatnyelvű rendszer a háttérmagyarázatokat a hírekkel együtt,
+  **ugyanabban a korlátozott fordítási API-kérésben** fordítja le.
+  A régi hírek és fordítások kompatibilisek maradnak, de a korábban
+  publikált cikkekre az új szabály nem kerül automatikusan, költségesen
+  visszamenőleg alkalmazásra.
+- A számfelismerés szándékosan konzervatív: fontos marad a kézi ellenőrzés
+  arra, hogy egy százalék vagy más mérőszám szövegkörnyezete,
+  időszaka és jelentése nem változott-e meg a fordítás során.
