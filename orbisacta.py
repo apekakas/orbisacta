@@ -73,12 +73,12 @@ def connect(db_path: Path = DB_PATH):
         rights_reference_url TEXT DEFAULT '',
         title_original TEXT NOT NULL, url TEXT NOT NULL UNIQUE,
         published_utc TEXT, excerpt TEXT, text_excerpt TEXT,
-        title_hu TEXT, summary_hu TEXT, topic TEXT,
+        title_hu TEXT, summary_hu TEXT, context_hu TEXT DEFAULT '', topic TEXT,
         importance INTEGER DEFAULT 0, status TEXT NOT NULL,
         error TEXT, ingested_utc TEXT NOT NULL, processed_utc TEXT
     )""")
     fields = {x[1] for x in con.execute("PRAGMA table_info(articles)").fetchall()}
-    for field in ("author", "license", "license_url", "rights_reference_url"):
+    for field in ("author", "license", "license_url", "rights_reference_url", "context_hu"):
         if field not in fields:
             con.execute(f"ALTER TABLE articles ADD COLUMN {field} TEXT DEFAULT ''")
     con.execute("CREATE INDEX IF NOT EXISTS by_country_status ON articles(country, status)")
@@ -278,6 +278,23 @@ For WORLD feeds, country_relevant may be true for any country and event_country
 should indicate the main affected country only if unmistakable, else WORLD.
 For EU feeds, country_relevant means a story principally about the European Union.
 Include source viewpoints as attributed statements, not independent verified facts.
+When an article reports quantitative findings, prominently include its
+most important figures instead of vaguely describing the topic. If TWO or
+more substantive statistics exist, reproduce at least TWO DISTINCT figures
+in the five Hungarian sentences, each directly supported by a verbatim
+source quote. Give the value, unit, period and comparison (when relevant).
+Preserve percentage versus percentage-point differences, denominators,
+and magnitudes. Use digits; do not mistake years or dates for metrics.
+Never invent figures if the article contains fewer than two statistics.
+Additionally return "local_terms": 0-2 objects of form
+{"term_original":"exact term appearing in source_text",
+"explanation_hu":"one fluent, informative Hungarian explanatory sentence",
+"support_quote":"exact 15+ character source_text substring containing the term
+and supporting the explanation"}.
+Choose country-specific institutions, laws, acronyms or social concepts
+that readers abroad would not know. Explain ONLY when the source itself
+provides enough information; otherwise return local_terms:[].
+At most TWO glossary sentences total, separate from the five-point summary.
 If not enough verifiable details exist for 5 statements, return points:[].
 Do not infer eyewitness details or treat views as uncontested facts; attribute claims.
 Importance reflects the newsworthiness for residents, not headline sensationalism."""},
@@ -384,6 +401,10 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
                 valid, reason = check_evidence(text, result.get("points", []))
                 if not valid:
                     raise ValueError(reason)
+                from editorial_quality import check_numeric_facts
+                valid, reason = check_numeric_facts(text, result.get("points", []))
+                if not valid:
+                    raise ValueError(reason)
                 status, err = "published", ""
                 published += 1
             target_country = row["country"]
@@ -392,9 +413,11 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
                 target_country = proposed if proposed in COUNTRIES else "WORLD"
             points = result.get("points", []) if status == "published" else []
             summary = " ".join(p["sentence_hu"].strip() for p in points)
-            con.execute("""UPDATE articles SET title_hu=?, summary_hu=?, topic=?, country=?,
+            from editorial_quality import validated_background
+            context_hu = validated_background(text, result.get("local_terms", [])) if status == "published" else ""
+            con.execute("""UPDATE articles SET title_hu=?, summary_hu=?, context_hu=?, topic=?, country=?,
                  importance=?, status=?, error=?, processed_utc=? WHERE id=?""",
-                (str(result.get("title_hu", ""))[:500], summary, topic, target_country,
+                (str(result.get("title_hu", ""))[:500], summary, context_hu, topic, target_country,
                  min(100, max(0, int(result.get("importance", 0)))), status, err, now_utc(), row["id"]))
         except Exception as exc:
             name = type(exc).__name__
@@ -419,7 +442,7 @@ def export_json(con, destination: Path = PUBLISH_PATH):
     """
     cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat(timespec='seconds')
     rows = con.execute("""SELECT id, country, topic, source_name, author, license, license_url,
-          rights_reference_url, title_hu, url, published_utc, summary_hu, importance FROM articles WHERE status='published'
+          rights_reference_url, title_hu, url, published_utc, summary_hu, context_hu AS context_text, importance FROM articles WHERE status='published'
           AND published_utc >= ?
           ORDER BY importance DESC, published_utc DESC LIMIT 400""", (cutoff,)).fetchall()
     payload = {"project": "OrbisActa", "generated_utc": now_utc(),
