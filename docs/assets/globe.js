@@ -11,11 +11,17 @@ const locations={
  IT:{name:"Olaszország",coord:[12.5,42.8]},
  JP:{name:"Japán",coord:[138.1,36.3]},
  BR:{name:"Brazília",coord:[-51.9,-14.3]},
+ IN:{name:"India",coord:[78.96,20.59]},
+ CN:{name:"Kína",coord:[103.83,35.86]},
+ AU:{name:"Ausztrália",coord:[133.78,-25.27]},
+ SA:{name:"Szaúd-Arábia",coord:[45.08,23.88]},
+ NG:{name:"Nigéria",coord:[8.67,9.08]},
+ ZA:{name:"Dél-Afrika",coord:[22.94,-30.56]},
  US:{name:"Egyesült Államok",coord:[-98.5,39.8]},
  GB:{name:"Egyesült Királyság",coord:[-2.4,54.1]},
  EU:{name:"Európai Unió",coord:[4.35,50.85]}
 };
-const viewpoints={europe:[12,47],america:[-78,15],asia:[120,28]};
+const viewpoints={europe:[12,47],america:[-78,15],asia:[105,24],africa:[22,0],oceania:[135,-25]};
 function svgNode(tag,attrs){
  const el=document.createElementNS(NS,tag);
  Object.entries(attrs||{}).forEach(([k,v])=>el.setAttribute(k,v));
@@ -37,6 +43,9 @@ function mount(options){
  }
  const d3=window.d3;
  let center=[12,47],scale=192,land=null,items=[],active=new Set();
+ const minScale=125,maxScale=360;
+ const clampZoom=value=>Math.max(minScale,Math.min(maxScale,value));
+ function zoomBy(factor){scale=clampZoom(scale*factor);redraw()}
  const projection=d3.geoOrthographic().scale(scale).translate([360,218]).rotate([-center[0],-center[1]]).clipAngle(90).precision(0.75);
  const path=d3.geoPath(projection);
  const sphere={type:"Sphere"};
@@ -106,24 +115,55 @@ function mount(options){
    }
    redraw();
  }
- let dragging=null;
+ // Touch, mouse and pen share the same pointer model. Two fingers zoom,
+ // one finger rotates. Pointer capture keeps gestures from jumping away.
+ const pointers=new Map();
+ let pinchDistance=0;
+ const distance=()=>{
+   const pair=[...pointers.values()];
+   return pair.length<2?0:Math.hypot(pair[0].x-pair[1].x,pair[0].y-pair[1].y);
+ };
  svg.addEventListener("pointerdown",ev=>{
-   if(ev.button!==0||ev.target.closest(".globe-pin"))return;
-   dragging={id:ev.pointerId,x:ev.clientX,y:ev.clientY,lon:center[0],lat:center[1]};
-   svg.setPointerCapture(ev.pointerId);
+   if(ev.pointerType==="mouse"&&ev.button!==0)return;
+   if(ev.target.closest(".globe-pin")&&pointers.size===0)return;
+   pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
+   try{svg.setPointerCapture(ev.pointerId)}catch(e){}
+   if(pointers.size>=2)pinchDistance=distance();
    svg.classList.add("dragging");
  });
  svg.addEventListener("pointermove",ev=>{
-   if(!dragging||ev.pointerId!==dragging.id)return;
+   if(!pointers.has(ev.pointerId))return;
+   const prior=pointers.get(ev.pointerId);
+   pointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
+   if(pointers.size>=2){
+     const nextDistance=distance();
+     if(pinchDistance>5&&nextDistance>5){
+       scale=clampZoom(scale*(nextDistance/pinchDistance));
+       redraw();
+     }
+     pinchDistance=nextDistance;
+     return;
+   }
    const ratio=720/Math.max(svg.getBoundingClientRect().width,1);
-   center=[dragging.lon+(dragging.x-ev.clientX)*ratio*.3,Math.max(-75,Math.min(75,dragging.lat+(ev.clientY-dragging.y)*ratio*.3))];
+   center=[center[0]+(prior.x-ev.clientX)*ratio*.28,
+           Math.max(-75,Math.min(75,center[1]+(ev.clientY-prior.y)*ratio*.28))];
    redraw();
  });
- function stop(ev){if(!dragging||ev.pointerId!==dragging.id)return;dragging=null;svg.classList.remove("dragging");}
- svg.addEventListener("pointerup",stop);svg.addEventListener("pointercancel",stop);
+ const stopPointer=ev=>{
+   if(!pointers.has(ev.pointerId))return;
+   pointers.delete(ev.pointerId);
+   pinchDistance=pointers.size>=2?distance():0;
+   if(pointers.size===0)svg.classList.remove("dragging");
+ };
+ svg.addEventListener("pointerup",stopPointer);
+ svg.addEventListener("pointercancel",stopPointer);
+ svg.addEventListener("lostpointercapture",stopPointer);
  svg.addEventListener("wheel",ev=>{
-   ev.preventDefault();scale=Math.max(135,Math.min(232,scale+(ev.deltaY<0?12:-12)));redraw();
+   ev.preventDefault();zoomBy(ev.deltaY<0?1.12:1/1.12);
  },{passive:false});
+ document.querySelectorAll("[data-globe-zoom]").forEach(button=>{
+   button.addEventListener("click",()=>zoomBy(button.dataset.globeZoom==="in"?1.25:1/1.25));
+ });
  svg.setAttribute("tabindex","0");
  svg.addEventListener("keydown",ev=>{
    const delta={ArrowLeft:[-15,0],ArrowRight:[15,0],ArrowUp:[0,12],ArrowDown:[0,-12]}[ev.key];
