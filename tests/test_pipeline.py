@@ -665,6 +665,7 @@ def test_separate_country_topic_accordions_and_native_date_picker_all_locales():
         assert "archivePeriod.start_date" in page
         assert "archivePeriod.end_date" in page
         assert "dateScoped=articles.filter(inSelectedDate)" in page
+        assert "month:'long',day:'numeric',timeZone:'UTC'" in page
         assert 'filters-panel" id="filters-panel"' not in page
     dictionary=(root/"assets"/"i18n.js").read_text(encoding="utf-8")
     assert dictionary.count("archiveLabel:")==6

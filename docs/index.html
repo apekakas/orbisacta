@@ -520,7 +520,7 @@ function render(){
   if(item.source_name)card.append(el('span',item.source_name,'story-source'));
   card.append(el('h2',item.title_hu));
   card.append(el('p',item.summary_hu));
-  const publishedDate=item.published_utc?new Date(item.published_utc).toLocaleDateString(currentLang==='pt'?'pt-BR':currentLang,{year:'numeric',month:'long',day:'numeric'}):'';
+  const publishedDate=item.published_utc?new Date(item.published_utc).toLocaleDateString(currentLang==='pt'?'pt-BR':currentLang,{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}):'';
   const credit=el('small',(publishedDate?tr('sourceDate')+': '+publishedDate+' · ':'')+(item.author?item.author+' · ':'')+(item.source_name||'')+(item.license?' · '+item.license:'')+' · '+tr('credit'));
   credit.style.cssText='color:#526575;line-height:1.55;font-size:12px';
   card.append(credit);
