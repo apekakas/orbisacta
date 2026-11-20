@@ -927,13 +927,13 @@ def test_native_script_statistics_and_exact_unchanged_source_quotes():
     assert {"4.6","72.3"} <= numeric_values(source, require_unit=True)
     points = [
         {"sentence_hu":"Japánban a munkanélküliségi arány 4,6 százalék volt.",
-         "support_quote":"日本の失業率は4.6％に達し"},
+         "support_quote":"日本の失業率は4.6％に達し、中国"},
         {"sentence_hu":"Kínában a foglalkoztatási arány elérte a 72,3 százalékot.",
          "support_quote":"中国の就業率は72.3％だった"},
         {"sentence_hu":"A különböző országok adatait az eredeti jelentésekben tették közzé.",
          "support_quote":"В России уровень безработицы составляет 4,6%"},
         {"sentence_hu":"Az elemzés két állam munkaerőpiacának mutatóit hasonlítja össze.",
-         "support_quote":"日本の失業率は4.6％に達し"},
+         "support_quote":"日本の失業率は4.6％に達し、中国"},
         {"sentence_hu":"A foglalkoztatottsági mutatóra Kínáról található számadat.",
          "support_quote":"中国の就業率は72.3％だった"}
     ]
