@@ -9,10 +9,12 @@ import re
 # These are exact, context-safe corrections; not a general machine translator.
 # Keep this list deliberately small and review each addition editorially.
 TERMS = (
+    (r"\btotal mastectom(?:y|ies)-t\b", "teljes emlőeltávolítást"),
     (r"\btotal mastectom(?:y|ies)\b", "teljes emlőeltávolítás"),
+    (r"\bpartial mastectom(?:y|ies)-t\b", "részleges emlőeltávolítást"),
     (r"\bpartial mastectom(?:y|ies)\b", "részleges emlőeltávolítás"),
     (r"\bmammákat érintő rák\b", "emlőrák"),
-    (r"\bBelgaország\b", "Belgium"),
+    (r"\bBelgaország", "Belgium"),
 )
 
 # Do not touch years, date notation (2024.11.20), thousands-grouped numbers,
@@ -23,7 +25,7 @@ DECIMAL = re.compile(r"(?<![\d.])(\d{1,3})\.(\d{1,2})(?![\d.])")
 # Proper names, abbreviations and established English loanwords are not banned.
 UNTRANSLATED = re.compile(
     r"\b(?:total|partial)\s+mastectom(?:y|ies)\b|"
-    r"\b(?:per\s+100[ ,.]?000\s+women|mammákat érintő rák|Belgaország)\b",
+    r"\b(?:per\s+100[ ,.]?000\s+women|mammákat érintő rák|Belgaország)\w*\b",
     flags=re.IGNORECASE,
 )
 
