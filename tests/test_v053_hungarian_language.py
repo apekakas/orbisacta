@@ -24,7 +24,7 @@ BAD_EXAMPLE = (
 def test_user_example_fixed_and_figures_preserved():
     revised = polish_hungarian(BAD_EXAMPLE)
     assert "emlőrák" in revised
-    assert "teljes emlőeltávolítás-t" in revised
+    assert "teljes emlőeltávolítást" in revised
     assert "Belgium" in revised
     assert "70,1" in revised
     assert "138,7" in revised
