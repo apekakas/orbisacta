@@ -467,10 +467,16 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
     # Do not spend API credits processing stale articles. Also reject feeds
     # without a trustworthy publication timestamp until reviewed.
     recent_cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat(timespec="seconds")
-    candidates = con.execute("""SELECT * FROM articles WHERE status='pending_ai'
+    # Only authorized sources may occupy the preflight shortlist.
+    # Otherwise a large backlog of ineligible rows can starve all AI work.
+    if max_items <= 0:
+        return {"processed": 0, "published": 0, "reason": "capacity_reached"}
+    placeholders = ",".join("?" for _ in approved)
+    candidates = con.execute(f"""SELECT * FROM articles WHERE status='pending_ai'
                          AND published_utc >= ?
+                         AND source_id IN ({placeholders})
                          ORDER BY published_utc DESC LIMIT ?""",
-                       (recent_cutoff, max(200, max_items * 20))).fetchall()
+                       (recent_cutoff, *sorted(approved), max(200, max_items * 20))).fetchall()
     # Inspect more candidates than the API budget so articles with unavailable
     # authors, blocked HTML or insufficient source text don't waste AI slots.
     # The model-call cap remains max_items; candidate lookahead scales
@@ -586,6 +592,10 @@ def export_public_status(report: dict, destination: Path = PUBLIC_STATUS_PATH):
         "updated_utc": report.get("ran_utc", now_utc()),
         "feed_count": len(collection),
         "feeds_ok": sum(s.get("status") == "ok" for s in collection),
+        "feeds_empty": int(report.get("intake", {}).get("feeds_empty", 0)),
+        "entries_new_in_run": int(report.get("intake", {}).get("entries_new", 0)),
+        "pending_eligible_before_ai": int(report.get("pending_before_ai", {}).get("recent_eligible_for_preflight", 0)),
+        "pending_stale_before_ai": int(report.get("pending_before_ai", {}).get("older_than_seven_days", 0)),
         "ai_configured": bool(os.environ.get("OPENAI_API_KEY")),
         "items_published_in_run": int(ai.get("published", 0)),
         "ai_attempts_in_run": int(ai.get("processed", 0)),
@@ -691,6 +701,11 @@ def main(argv=None):
         report = {"ran_utc": now_utc(), "command": args.command}
         if args.command in ("collect", "run"):
             report["collection"] = collect(con, sources, args.limit_per_feed)
+            from pending_diagnostics import collect_breakdown
+            report["intake"] = collect_breakdown(report["collection"])
+        if args.command in ("process", "run"):
+            from pending_diagnostics import pending_breakdown
+            report["pending_before_ai"] = pending_breakdown(con, sources)
         if args.command in ("process", "run"):
             from quality_capacity import capacity_plan, daily_published_count, positive_int
             approved = positive_int(os.environ.get("ORBIS_APPROVED_MAX_AI_PER_RUN"), 10)
