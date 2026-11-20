@@ -1,4 +1,4 @@
-"""OrbisActa 0.3 — provenance-first, rights-gated global news pilot.
+"""OrbisActa 0.4 — provenance-first, rights-gated global news pilot.
 
 Python 3.11+.  Live ingestion requires internet. AI requires OPENAI_API_KEY and a
 source marked ai_approved=true after checking usage rights.  No full articles
@@ -452,8 +452,9 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
                        (recent_cutoff, max(200, max_items * 20))).fetchall()
     # Inspect more candidates than the API budget so articles with unavailable
     # authors, blocked HTML or insufficient source text don't waste AI slots.
-    # The actual model-call cap remains max_items (10 in production).
-    rows = select_diverse_pending(candidates, min(max_items * 2, 40))
+    # The model-call cap remains max_items; candidate lookahead scales
+    # proportionally rather than silently stopping at 40 rows.
+    rows = select_diverse_pending(candidates, max_items * 4)
     processed = published = 0
     for row in rows:
         if processed >= max_items:
@@ -568,6 +569,9 @@ def export_public_status(report: dict, destination: Path = PUBLIC_STATUS_PATH):
         "items_published_in_run": int(ai.get("published", 0)),
         "live_article_count": int(report.get("exported", 0)),
         "mode": "pilot",
+        "daily_target": int(report.get("capacity", {}).get("daily_target", 100)),
+        "published_today": int(report.get("capacity", {}).get("published_today", 0)) + int(ai.get("published", 0)),
+        "approved_ai_per_run": int(report.get("capacity", {}).get("approved_ai_per_run", 10)),
     }
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -627,7 +631,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="OrbisActa news ingestion/QA pilot")
     parser.add_argument("command", choices=["collect", "process", "export", "run", "status", "serve", "sources", "latest", "check-feeds"])
     parser.add_argument("--limit-per-feed", type=int, default=10)
-    parser.add_argument("--max-ai", type=int, default=12)
+    parser.add_argument("--max-ai", type=int, default=10)
+    parser.add_argument("--daily-target", type=int, default=100, help="Editorial target, not permission to spend on API")
     parser.add_argument("--max-translations", type=int, default=3, help="Maximum source articles translated into five languages per run")
     parser.add_argument("--model", default=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"))
     parser.add_argument("--port", type=int, default=8000)
@@ -664,7 +669,11 @@ def main(argv=None):
         if args.command in ("collect", "run"):
             report["collection"] = collect(con, sources, args.limit_per_feed)
         if args.command in ("process", "run"):
-            report["ai"] = process(con, sources, args.max_ai, args.model)
+            from quality_capacity import capacity_plan, daily_published_count, positive_int
+            approved = positive_int(os.environ.get("ORBIS_APPROVED_MAX_AI_PER_RUN"), 10)
+            capacity = capacity_plan(daily_published_count(con), args.max_ai, approved, args.daily_target)
+            report["capacity"] = capacity
+            report["ai"] = process(con, sources, capacity["effective_max_ai"], args.model)
         if args.command in ("process", "run"):
             from international import translate_pending
             report["translations"] = translate_pending(con, args.max_translations, args.model)
