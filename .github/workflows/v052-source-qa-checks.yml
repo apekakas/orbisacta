@@ -1,0 +1,23 @@
+name: OrbisActa v0.5.2 source QA attribution
+on:
+  push:
+    branches: [feature/v052-source-failure-attribution]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt "pytest>=8,<10"
+      - name: Source failure diagnostics regression suite
+        run: |
+          python -m compileall -q source_failure_diagnostics.py diagnostics.py
+          python -m pytest -q tests/
