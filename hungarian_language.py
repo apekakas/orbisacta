@@ -22,12 +22,24 @@ TERMS = (
     (r"\bdeprivációs ráta\b", "nélkülözés aránya"),
     (r"\bdeprivációt\b", "nélkülözést"),
         (r"\bmammákat érintő rák\b", "emlőrák"),
+    # "waste crime" mistranslated into a non-existent Hungarian word.
+    (r"\bhulladékrémállyal\b", "illegális hulladékkezeléssel"),
+    (r"\bhulladékrémály\w*", "illegális hulladékkezelés"),
     (r"\bBelgaország", "Belgium"),
 )
 
 # Do not touch years, date notation (2024.11.20), thousands-grouped numbers,
 # versions, URLs or strings containing other dots.
 DECIMAL = re.compile(r"(?<![\d.])(\d{1,3})\.(\d{1,2})(?![\d.])")
+
+# English thousands grouping in unambiguous monetary amounts, e.g.
+# "10,000 font", "71,000 font". Do not rewrite bare 0,125 values
+# or decimals where no supported currency noun follows.
+CURRENCY_THOUSANDS = re.compile(
+    r"(?<![\d.,])([1-9]\d{0,2}),([0-9]{3})(?=\s*(?:font(?:ot|tal|ban|ból|nak)?|"
+    r"euró(?:t|val|ban|ból)?|dollár(?:t|ral|ban|ból)?|forint(?:ot|tal|ban|ból)?)\b)",
+    re.IGNORECASE,
+)
 
 # A narrow warning list: terms unambiguously untranslated in Hungarian briefs.
 # Proper names, abbreviations and established English loanwords are not banned.
@@ -44,6 +56,7 @@ def polish_hungarian(text):
         return text
     for pattern, replacement in TERMS:
         text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+    text = CURRENCY_THOUSANDS.sub(r"\1 \2", text)
     return DECIMAL.sub(r"\1,\2", text)
 
 
@@ -51,6 +64,8 @@ def check_hungarian_language(text):
     """Flag clearly untranslated phrases, not speculative stylistic issues."""
     if not isinstance(text, str) or not text.strip():
         return False, "empty_hungarian_text"
+    if re.search(r"\bhulladékrémál\w*", text, flags=re.IGNORECASE):
+        return False, "nonsensical_waste_crime_translation"
     if UNTRANSLATED.search(text):
         return False, "untranslated_foreign_term"
     return True, "ok"
