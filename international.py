@@ -161,7 +161,7 @@ def export_languages(con, base_payload, target_folder):
             FROM articles a JOIN article_translations t ON a.id=t.article_id
             WHERE a.status='published' AND t.lang=? AND a.published_utc >= ?
               AND a.published_utc < ?
-            ORDER BY a.importance DESC, a.published_utc DESC LIMIT 400""",
+            ORDER BY a.importance DESC, a.published_utc DESC LIMIT 1000""",
             (lang, cutoff, tomorrow)).fetchall()
         data = dict(base_payload)
         data["language"] = lang
