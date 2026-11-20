@@ -209,10 +209,14 @@ def insert_entries(con, source: dict, entries: list[dict]) -> dict:
             continue
         # Same-country, same-source near-exact repeats only. Keep other outlets'
         # different perspectives, even when covering the same event.
-        recent = con.execute("""SELECT title_original FROM articles WHERE source_id=?
-                                ORDER BY ingested_utc DESC LIMIT 60""", (source["id"],)).fetchall()
-        normalized = normalize_title(title)
-        if any(SequenceMatcher(None, normalized, normalize_title(x[0])).ratio() > 0.94 for x in recent):
+        recent = con.execute("""SELECT title_original, published_utc FROM articles
+                                WHERE source_id=? AND published_utc IS NOT NULL
+                                ORDER BY ingested_utc DESC LIMIT 60""",
+                             (source["id"],)).fetchall()
+        from deduplication import is_likely_duplicate
+        if any(is_likely_duplicate(title, entry.get("published_utc", ""),
+                                   x["title_original"], x["published_utc"])
+               for x in recent):
             near_duplicates += 1
             continue
         con.execute("""INSERT INTO articles (id, country, topic_hint, source_id,
@@ -631,6 +635,10 @@ def export_public_status(report: dict, destination: Path = PUBLIC_STATUS_PATH):
         "feed_recent_known_pending": int(report.get("intake", {}).get("recent_known_pending_ai", 0)),
         "recovered_publication_dates": int(report.get("intake", {}).get("recovered_publication_dates", 0)),
         "entries_new_in_run": int(report.get("intake", {}).get("entries_new", 0)),
+        "near_duplicates_skipped_in_run": int(report.get("intake", {}).get("entries_near_duplicates", 0)),
+        "duplicate_urls_in_run": int(report.get("intake", {}).get("entries_duplicate_urls", 0)),
+        "feed_recent_known_needs_review": int(report.get("intake", {}).get("recent_known_needs_review", 0)),
+        "feed_recent_known_wrong_country": int(report.get("intake", {}).get("recent_known_wrong_country", 0)),
         "pending_eligible_before_ai": int(report.get("pending_before_ai", {}).get("recent_eligible_for_preflight", 0)),
         "pending_stale_before_ai": int(report.get("pending_before_ai", {}).get("older_than_seven_days", 0)),
         "ai_configured": bool(os.environ.get("OPENAI_API_KEY")),
