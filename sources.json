@@ -592,7 +592,7 @@
     "rights_note": "Discovery candidate only. Confirm RSS endpoint, editorial rights, access conditions and extraction before enabling. Do not use for AI processing automatically."
   },
   {
-    "id": "candidate-ec-press",
+    "id": "ec-press",
     "name": "Európai Bizottság – Sajtóközlemények",
     "country": "EU",
     "topic_hint": "politika",
@@ -606,6 +606,9 @@
     "feed_status": "verified_rss_endpoint_pending_actions_integration",
     "author_required": false,
     "rights_note": "Only European Commission-issued press releases (IP identifiers). Respect third-party exclusions; do not reuse photos, media, external quotations as independent licensed content. Attribute European Commission, source link and AI adaptation. Feed endpoint identified as RSS; live GitHub ingestion and article extraction must be verified.",
-    "allowed_url_path_regex": "(?i)/presscorner/detail/en/ip_[0-9]"
+    "allowed_url_path_regex": "(?i)/presscorner/detail/en/ip_[0-9]",
+    "allowed_url_hosts": [
+      "ec.europa.eu"
+    ]
   }
 ]
