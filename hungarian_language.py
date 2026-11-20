@@ -76,3 +76,64 @@ def jargon_review_terms(text):
     if not isinstance(text, str):
         return []
     return sorted(term for term, pattern in READER_JARGON.items() if pattern.search(text))
+
+
+# Editorially verified, stable acronym expansions. These are word meanings,
+# not new assertions about the event reported in a source article. Do NOT
+# auto-expand ambiguous or unfamiliar acronyms from guessed meanings.
+VERIFIED_ABBREVIATIONS = {
+    "STEM": "természettudományok, technológia, mérnöki tudományok és matematika",
+    "GDP": "bruttó hazai termék",
+    "WHO": "Egészségügyi Világszervezet",
+    "OECD": "Gazdasági Együttműködési és Fejlesztési Szervezet",
+}
+UNEXPLAINED_ABBREVIATION_EXCEPTIONS = {
+    "EU", "USA", "ENSZ", "NATO", "AI", "MI", "GDP", "WHO", "OECD", "STEM",
+    "USD", "EUR", "HUF", "UK", "BBC", "CNN", "NASA", "API", "RSS",
+}
+
+
+def expand_verified_abbreviations(text):
+    """Explain known acronyms ONCE per summary, never change quantitative data.
+
+    Avoid double expansions where the abbreviation is already explicitly
+    defined in the immediately following parenthesis. Other abbreviations
+    are left untouched instead of hallucinating a definition.
+    """
+    if not isinstance(text, str):
+        return text
+    for acronym, definition in VERIFIED_ABBREVIATIONS.items():
+        match = re.search(r"\b" + re.escape(acronym) + r"\b", text)
+        if not match:
+            continue
+        # A source/AI may already have explained the acronym. In that case
+        # do not duplicate any parenthetical definition.
+        tail = text[match.end():match.end()+180]
+        if re.match(r"\s*\(", tail) or definition.casefold() in text.casefold():
+            continue
+        # Treat a hyphenated Hungarian descriptive compound as an attribute
+        # of the abbreviation rather than hanging the suffix on parentheses.
+        suffix = re.match(r"-(terület\w*|hallgat\w*|szak\w*|képzés\w*)\b", tail)
+        if suffix and acronym == "STEM":
+            new = f"{acronym} ({definition}) {suffix.group(1)}"
+            text = text[:match.start()] + new + text[match.end()+len(suffix.group(0)):]
+        else:
+            new = f"{acronym} ({definition})"
+            text = text[:match.start()] + new + text[match.end():]
+    return text
+
+
+def abbreviations_for_editorial_review(text):
+    """Detect potentially obscure, unexplained all-cap acronyms for review."""
+    if not isinstance(text, str):
+        return []
+    found = set()
+    for match in re.finditer(r"(?<![\w])([A-ZÁÉÍÓÖŐÚÜŰ]{2,8})(?![\w])", text):
+        word = match.group(1)
+        if word in UNEXPLAINED_ABBREVIATION_EXCEPTIONS:
+            continue
+        tail = text[match.end():match.end()+90]
+        if re.match(r"\s*\(", tail):
+            continue
+        found.add(word)
+    return sorted(found)
