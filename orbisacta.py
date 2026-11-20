@@ -382,6 +382,26 @@ source quote. Give the value, unit, period and comparison (when relevant).
 Preserve percentage versus percentage-point differences, denominators,
 and magnitudes. Use digits; do not mistake years or dates for metrics.
 Never invent figures if the article contains fewer than two statistics.
+READER-FIRST EDITORIAL PRINCIPLE (mandatory for every news brief):
+A reader without specialist knowledge must understand WHAT happened and WHY
+it matters on first reading. Prefer familiar, precise Hungarian words over
+unexplained statistical, medical, legal, political and scientific jargon.
+If a technical term is not necessary for factual accuracy, replace it with a
+plain-language equivalent. If it is necessary (e.g. a named statistical
+indicator), explain it in one short, accessible clause when first mentioned,
+then use a simpler expression thereafter. Avoid repeating jargon in all five
+sentences. For example "súlyos anyagi és társadalmi depriváció" should be
+introduced as "súlyos anyagi és társadalmi nélkülözés", not as unexplained
+"deprivációs ráta"; say "a súlyos nélkülözés aránya" instead.
+Do not fabricate a statistical indicator's methodology, a 13-item list,
+threshold, cause, implication or definition that the source_text does not
+establish. If detailed background is absent from source_text, provide only a
+safe, general paraphrase; leave finer methodological explanations out.
+If a necessary unfamiliar concept is defined or explained by source_text,
+supply a separate, evidence-backed local_terms explanation for the reader.
+Make explanations concise, helpful and non-redundant; preserve all factual
+qualifiers, denominator and figures. Read each sentence as if for an adult
+general-interest reader before returning it.
 POLISHED HUNGARIAN IS MANDATORY: Write like a careful native Hungarian news editor,
 not a literal machine translator. Translate generic English technical terms to
 their established Hungarian equivalents; keep only official names, brands and
@@ -402,6 +422,10 @@ Additionally return "local_terms": 0-2 objects of form
 "explanation_hu":"one fluent, informative Hungarian explanatory sentence",
 "support_quote":"exact 15+ character source_text substring containing the term
 and supporting the explanation"}.
+Use the reader-first principle also when selecting local_terms: prioritize
+the one or two terms that would genuinely prevent understanding, not merely
+terms that sound technical. A plain-language gloss must be helpful and
+justified by original source text; never manufacture a precise definition.
 Prefer up to TWO unfamiliar expressions that readers of the five-point
 summary may need explained: country-specific institutions or laws, acronyms,
 technical/scientific concepts, economic and labour-market indicators or
