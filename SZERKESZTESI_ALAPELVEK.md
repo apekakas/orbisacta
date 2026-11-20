@@ -6,11 +6,12 @@
 
 1. **Közérthető magyar nyelv.** Kerüljük a gépies tükörfordításokat, körülményes bürokratikus megfogalmazást, fölösleges szakszavakat. A pontosság és a természetes magyar mondatszerkesztés egyszerre követelmény.
 2. **A nehéz fogalmakat magyarázzuk.** Ha egy szakszó helyettesíthető köznyelvi szóval, azt használjuk. Ha szakmailag szükséges, első előfordulásánál röviden értelmezzük; utána egyszerűbb szóval hivatkozunk rá. Ha az eredeti forrás megfelelően alátámasztja, egy külön „Háttér / Mit jelent?” magyarázat is megjelenhet.
-3. **Nem találunk ki definíciókat.** Bonyolult mutató pontos képletét, küszöbértékét, részletes módszertanát csak ellenőrzött forrásbizonyíték alapján állítjuk. Ha a forrásból nem igazolható, nem közöljük találgatásként.
-4. **Az ötmondatos hír legyen önmagában érthető.** Nem feltétlenül kell a fogalmat öt mondaton át ismételni; az első mondatban elegendő rövid magyarázatot adni, a továbbiakban természetesebb megnevezést használni.
-5. **Megőrizzük a tényeket.** Nem módosulhat a mérőszám, nevező, időszak, ország, forráshoz kötött értelmezés vagy a százalék és százalékpont közötti különbség. Az eredeti forrásidézet változatlan marad.
-6. **Minden szakterületre vonatkozik.** Közgazdaság, egészségügy, tudomány, statisztika, jog, külpolitika, technológia, sport és kultúra.
-7. **Nincs magyarázatnak álcázott vélemény.** Ha a hírben vitatott értelmezés szerepel, egyértelműen a forráshoz kötjük.
+3. **Az ismeretlen rövidítéseket első előforduláskor feloldjuk.** Például: „STEM (természettudományok, technológia, mérnöki tudományok és matematika)”. Az ötmondatos összefoglalóban szerepeljen, ne kizárólag a külön háttérmezőben. Az általánosan ismert EU és USA rövidítéseket nem kell körülírni. Egy rövidítés jelentését soha nem találjuk ki: ellenőrzött jelentés vagy a forrásból igazolt értelmezés szükséges. A feloldást csak egyszer adjuk meg.
+4. **Nem találunk ki definíciókat.** Bonyolult mutató pontos képletét, küszöbértékét, részletes módszertanát csak ellenőrzött forrásbizonyíték alapján állítjuk. Ha a forrásból nem igazolható, nem közöljük találgatásként.
+5. **Az ötmondatos hír legyen önmagában érthető.** Nem feltétlenül kell a fogalmat öt mondaton át ismételni; az első mondatban elegendő rövid magyarázatot adni, a továbbiakban természetesebb megnevezést használni.
+6. **Megőrizzük a tényeket.** Nem módosulhat a mérőszám, nevező, időszak, ország, forráshoz kötött értelmezés vagy a százalék és százalékpont közötti különbség. Az eredeti forrásidézet változatlan marad.
+7. **Minden szakterületre vonatkozik.** Közgazdaság, egészségügy, tudomány, statisztika, jog, külpolitika, technológia, sport és kultúra.
+8. **Nincs magyarázatnak álcázott vélemény.** Ha a hírben vitatott értelmezés szerepel, egyértelműen a forráshoz kötjük.
 
 ## Szerkesztési példák
 
