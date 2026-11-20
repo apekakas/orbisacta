@@ -423,6 +423,18 @@ terms naturally where relevant. Belgium in Hungarian is "Belgium", never
 "Belgaország". Use Hungarian decimal commas ("70,1" not "70.1") and
 readable thousands-grouping ("560 730"); retain every magnitude, unit,
 year, denominator, and percentage-versus-percentage-point distinction.
+LANGUAGE QUALITY GATE: Avoid invented pseudo-Hungarian words, malformed
+compounds or literal loan translations of common English phrases. For
+example, English "waste crime" is "hulladékkal kapcsolatos bűncselekmény"
+or contextually "illegális hulladékkezelés", NEVER "hulladékrémály".
+"36 arrests in relation to waste crime since April" means authorities
+made 36 arrests since April while investigating waste-related crime;
+do not incorrectly state that all arrests relate to one defendant.
+For monetary values, distinguish decimal fractions from thousands:
+"10,000 pounds" means "10 000 font", not "10,000 font" in Hungarian.
+Use short, idiomatic active-voice Hungarian sentences without invented
+translations. Recheck names, units, numeric magnitudes and locations
+against the unchanged direct source evidence before returning JSON.
 Do not mix English grammatical fragments into Hungarian sentences.
 Before finalizing, reread all five Hungarian sentences for grammar, clear
 subject–verb agreement, natural case endings, and accurate terminology.
