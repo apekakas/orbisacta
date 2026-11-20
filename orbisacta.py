@@ -236,7 +236,9 @@ def extract_article_text(url: str) -> str:
     response.raise_for_status()
     if len(response.content) > 3_000_000:
         raise ValueError("Page exceeds 3MB safety cap")
-    text = trafilatura.extract(response.text, include_comments=False, include_tables=False)
+    # Pass source bytes through the extractor's charset detection. requests'
+    # response.text may incorrectly assume Latin-1 for Japanese, Chinese or Russian.
+    text = trafilatura.extract(response.content, include_comments=False, include_tables=True)
     return re.sub(r"\s+", " ", text or "").strip()[:16000]
 
 
@@ -271,6 +273,7 @@ def ai_summarize(article, text: str, model: str) -> dict:
     client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], timeout=65)
     user_payload = json.dumps({
         "country": COUNTRIES[article["country"]],
+        "allowed_event_country_codes": list(COUNTRIES),
         "source": article["source_name"],
         "original_title": article["title_original"],
         "source_text": text,
@@ -287,9 +290,20 @@ source_text; do not invent context, numbers, dates or implications. Produce vali
 supporting that sentence)].
 For country_relevant true, the subject must be substantially about the specified
 country or affect its people/institutions; publisher country alone is insufficient.
-For WORLD feeds, country_relevant may be true for any country and event_country
-should indicate the main affected country only if unmistakable, else WORLD.
+Return event_country for EVERY feed: the unambiguous main affected
+country as ONE of allowed_event_country_codes, otherwise "WORLD".
+For a country-specific feed, country_relevant means principally about
+the supplied country; if false but another country is clearly central,
+give that other country in event_country. Never infer it from an article
+publisher's location or a passing mention. If unresolvable, use WORLD.
+For WORLD feeds, country_relevant may be true for any country.
 For EU feeds, country_relevant means a story principally about the European Union.
+The original article may be Russian (Cyrillic), Japanese (kana and kanji) or
+Chinese (Han characters). Read it in the original script; compose the five
+news sentences and optional explanations in Hungarian. Copy support_quote
+VERBATIM in the original writing system; do not transliterate or translate
+source quotes. Keep all figures, calendar dates and geographic names
+unambiguous. Do not treat a language as proof of the article's country.
 Include source viewpoints as attributed statements, not independent verified facts.
 Write an actual NEWS BRIEF, not a review of a news article. Start with
 what happened, what changed or what was found, who was affected, and when.
@@ -333,6 +347,36 @@ Importance reflects the newsworthiness for residents, not headline sensationalis
         response_format={"type": "json_object"}
     )
     return json.loads(response.choices[0].message.content)
+
+
+def is_compact_cjk(text):
+    """Identify articles dominated by Han/kana scripts for source-length checks."""
+    if not text:
+        return False
+    visible = sum(not ch.isspace() for ch in text)
+    if visible < 100:
+        return False
+    cjk = sum((
+        "\u3040" <= ch <= "\u30ff" or
+        "\u3400" <= ch <= "\u9fff" or
+        "\uf900" <= ch <= "\ufaff"
+    ) for ch in text)
+    return cjk >= 100 and cjk / visible >= 0.35
+
+
+def resolve_event_country(source_country, is_source_relevant, proposed_country):
+    """Use a supported, explicit country when a country-specific feed drifts.
+
+    The AI must name the country actually central to the story; unknown,
+    ambiguous or WORLD proposals cannot rescue an unrelated local item.
+    """
+    if is_source_relevant:
+        if source_country == "WORLD" and proposed_country in COUNTRIES:
+            return proposed_country
+        return source_country
+    if proposed_country in COUNTRIES and proposed_country not in {source_country, "WORLD"}:
+        return proposed_country
+    return None
 
 
 def select_diverse_pending(rows, limit):
@@ -406,25 +450,36 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
                          AND published_utc >= ?
                          ORDER BY published_utc DESC LIMIT ?""",
                        (recent_cutoff, max(200, max_items * 20))).fetchall()
-    rows = select_diverse_pending(candidates, max_items)
+    # Inspect more candidates than the API budget so articles with unavailable
+    # authors, blocked HTML or insufficient source text don't waste AI slots.
+    # The actual model-call cap remains max_items (10 in production).
+    rows = select_diverse_pending(candidates, min(max_items * 2, 40))
     processed = published = 0
     for row in rows:
+        if processed >= max_items:
+            break
         if row["source_id"] not in approved:
             continue
-        processed += 1
         try:
             src = source_lookup(sources)[row["source_id"]]
             if src.get("author_required") and not row["author"].strip():
                 raise ValueError("author_missing; a Global Voices szerzőjének megadása kötelező")
             text = extract_article_text(row["url"])
-            if len(text) < 550:
-                raise ValueError("insufficient_article_text (<550 chars); no invented summary")
+            min_chars = 360 if is_compact_cjk(text) else 550
+            if len(text) < min_chars:
+                raise ValueError(f"insufficient_article_text (<{min_chars} chars); no invented summary")
+            # Count only actual model invocations, not rights/HTML preflight
+            # rejections. This keeps API costs at the configured cap.
+            processed += 1
             result = ai_summarize(row, text, model)
             topic = result.get("topic", "egyéb")
             if topic not in TOPICS:
                 raise ValueError("invalid_topic")
-            if not result.get("country_relevant"):
-                status, err = "wrong_country", "story is not substantively about country"
+            target_country = resolve_event_country(
+                row["country"], bool(result.get("country_relevant")),
+                result.get("event_country", "WORLD"))
+            if target_country is None:
+                status, err = "wrong_country", "no unambiguous supported country in article"
             else:
                 valid, reason = check_evidence(text, result.get("points", []))
                 if not valid:
@@ -438,10 +493,7 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
                     raise ValueError(reason)
                 status, err = "published", ""
                 published += 1
-            target_country = row["country"]
-            if row["country"] == "WORLD":
-                proposed = result.get("event_country", "WORLD")
-                target_country = proposed if proposed in COUNTRIES else "WORLD"
+            target_country = target_country or row["country"]
             points = result.get("points", []) if status == "published" else []
             summary = " ".join(p["sentence_hu"].strip() for p in points)
             from editorial_quality import validated_background
