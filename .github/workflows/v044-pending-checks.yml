@@ -1,0 +1,24 @@
+name: OrbisActa v0.4.4 pending queue checks
+on:
+  push:
+    branches: [fix/v044-pending-ai-diagnostics]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt "pytest>=8,<10"
+      - name: Test backlog diagnosis and source selection
+        run: |
+          python -m compileall -q orbisacta.py pending_diagnostics.py
+          python -m pytest -q tests/
