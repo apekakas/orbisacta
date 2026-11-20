@@ -12,6 +12,10 @@ con = sqlite3.connect(db_path)
 try:
     statuses = Counter(dict(con.execute("SELECT status, COUNT(*) FROM articles GROUP BY status").fetchall()))
     errors = con.execute("SELECT error FROM articles WHERE status='needs_review'").fetchall()
+    from source_failure_diagnostics import source_failure_breakdown, aggregate_failures
+    con.row_factory = sqlite3.Row
+    per_source = source_failure_breakdown(con)
+    source_totals = aggregate_failures(per_source)
 finally:
     con.close()
 
@@ -43,6 +47,18 @@ def classify(message: str) -> str:
 
 print("Állapotok:", dict(statuses))
 print("AI ellenőrzési hibaokok:", dict(Counter(classify(x[0]) for x in errors)))
+print("Forrásonkénti QA összesítés (egyedi cikkek; nem RSS-megjelenések):", source_totals)
+for item in per_source:
+    if item["short_text"] or item["quote_mismatch"] or item["numeric_evidence"]:
+        print("Forrás QA:", {
+            "source_id": item["source_id"], "source": item["source"], "country": item["country"],
+            "short_text": item["short_text"],
+            "short_text_retried": item["short_text_retried"],
+            "recent_short_text": item["recent_short_text"],
+            "quote_mismatch": item["quote_mismatch"],
+            "recent_quote_mismatch": item["recent_quote_mismatch"],
+            "numeric_evidence": item["numeric_evidence"],
+        })
 
 # Safe aggregate-only details from the newest run help separate genuinely
 # eligible news from old entries and a queue exhausted during preflight.
