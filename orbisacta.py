@@ -122,15 +122,19 @@ def source_lookup(sources: list[dict]):
 
 
 def parse_date(raw: str) -> str:
+    """Parse an explicit source timestamp; never fabricate timezone or date."""
     if not raw:
         return ""
     try:
-        return parsedate_to_datetime(raw).astimezone(timezone.utc).isoformat(timespec="seconds")
-    except (ValueError, TypeError, IndexError):
+        stamp = parsedate_to_datetime(raw)
+    except (ValueError, TypeError, IndexError, OverflowError):
         try:
-            return datetime.fromisoformat(raw.replace("Z", "+00:00")).astimezone(timezone.utc).isoformat(timespec="seconds")
-        except ValueError:
+            stamp = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        except (ValueError, TypeError, OverflowError):
             return ""
+    if stamp.tzinfo is None or stamp.utcoffset() is None:
+        return ""
+    return stamp.astimezone(timezone.utc).isoformat(timespec="seconds")
 
 
 def parse_feed(xml_bytes: bytes) -> list[dict]:
@@ -143,7 +147,11 @@ def parse_feed(xml_bytes: bytes) -> list[dict]:
         title = item.findtext("title", default="")
         description = item.findtext("description", default="")
         author = (item.findtext("{http://purl.org/dc/elements/1.1/}creator") or item.findtext("author") or "").strip()
-        pub_date = item.findtext("pubDate", default="")
+        pub_date = (item.findtext("pubDate")
+                    or item.findtext("{http://purl.org/dc/elements/1.1/}date")
+                    or item.findtext("{http://purl.org/dc/terms/}issued")
+                    or item.findtext("published")
+                    or "")
         url = canonical_url(link)
         if url and strip_html(title):
             out.append({"url": url, "title": strip_html(title)[:500],
@@ -156,7 +164,9 @@ def parse_feed(xml_bytes: bytes) -> list[dict]:
         description = (item.findtext(f"{atom}summary") or item.findtext(f"{atom}content") or "")
         author = (item.findtext(f"{atom}author/{atom}name") or "").strip()
         links = item.findall(f"{atom}link")
-        link = next((x.attrib.get("href", "") for x in links if x.attrib.get("rel", "alternate") == "alternate"), "")
+        link = next((x.attrib.get("href", "") for x in links
+                     if x.attrib.get("rel", "alternate") == "alternate"
+                     and x.attrib.get("href")), "")
         pub_date = item.findtext(f"{atom}published") or item.findtext(f"{atom}updated") or ""
         url = canonical_url(link)
         if url and strip_html(title):
@@ -179,13 +189,23 @@ def feed_fetch(url: str) -> bytes:
 
 
 def insert_entries(con, source: dict, entries: list[dict]) -> dict:
-    added = near_duplicates = duplicate_urls = 0
+    added = near_duplicates = duplicate_urls = dates_recovered = 0
     for entry in entries:
         url, title = canonical_url(entry.get("url", "")), entry.get("title", "").strip()
         if not url or not title:
             continue
-        if con.execute("SELECT 1 FROM articles WHERE url=?", (url,)).fetchone():
+        existing = con.execute("SELECT id, status, published_utc FROM articles WHERE url=?", (url,)).fetchone()
+        if existing:
             duplicate_urls += 1
+            # Never relabel old news as new. Only repair a missing publication
+            # timestamp from an explicit date in the SAME source feed entry.
+            date = entry.get("published_utc") or ""
+            if (not existing["published_utc"] and date
+                    and existing["status"] in ("pending_ai", "awaiting_rights")
+                    and parse_date(date)):
+                con.execute("UPDATE articles SET published_utc=? WHERE id=? AND (published_utc IS NULL OR published_utc='')",
+                            (parse_date(date), existing["id"]))
+                dates_recovered += 1
             continue
         # Same-country, same-source near-exact repeats only. Keep other outlets'
         # different perspectives, even when covering the same event.
@@ -206,7 +226,7 @@ def insert_entries(con, source: dict, entries: list[dict]) -> dict:
              "pending_ai" if source["ai_approved"] else "awaiting_rights", now_utc()))
         added += 1
     con.commit()
-    return {"new": added, "duplicates": duplicate_urls, "near_duplicates": near_duplicates}
+    return {"new": added, "duplicates": duplicate_urls, "near_duplicates": near_duplicates, "dates_recovered": dates_recovered}
 
 
 def select_source_entries(source: dict, entries: list[dict], limit: int) -> list[dict]:
@@ -238,6 +258,8 @@ def collect(con, sources, limit_per_feed=12):
         result = {"source": source["name"], "country": source["country"], "new": 0}
         try:
             entries = select_source_entries(source, parse_feed(feed_fetch(source["rss_url"])), limit_per_feed)
+            from feed_freshness import classify_dates
+            result.update(classify_dates(entries))
             result.update(insert_entries(con, source, entries))
             result["read"] = len(entries)
             result["status"] = "ok"
@@ -245,7 +267,7 @@ def collect(con, sources, limit_per_feed=12):
             result["status"] = "error"
             result["error"] = f"{type(exc).__name__}: {str(exc)[:180]}"
         stats.append(result)
-        print(f"  {result['country']} {result['source']}: {result['status']} / új: {result['new']}")
+        print(f"  {result['country']} {result['source']}: {result['status']} / új: {result['new']} / friss: {result.get('entries_recent', 0)} / régi: {result.get('entries_stale', 0)} / dátum nélkül: {result.get('entries_undated', 0)}")
     return stats
 
 
@@ -593,6 +615,11 @@ def export_public_status(report: dict, destination: Path = PUBLIC_STATUS_PATH):
         "feed_count": len(collection),
         "feeds_ok": sum(s.get("status") == "ok" for s in collection),
         "feeds_empty": int(report.get("intake", {}).get("feeds_empty", 0)),
+        "feeds_with_recent_entries": int(report.get("intake", {}).get("feeds_with_recent_entries", 0)),
+        "feed_entries_recent": int(report.get("intake", {}).get("recent_entries", 0)),
+        "feed_entries_stale": int(report.get("intake", {}).get("stale_entries", 0)),
+        "feed_entries_undated": int(report.get("intake", {}).get("undated_entries", 0)),
+        "recovered_publication_dates": int(report.get("intake", {}).get("recovered_publication_dates", 0)),
         "entries_new_in_run": int(report.get("intake", {}).get("entries_new", 0)),
         "pending_eligible_before_ai": int(report.get("pending_before_ai", {}).get("recent_eligible_for_preflight", 0)),
         "pending_stale_before_ai": int(report.get("pending_before_ai", {}).get("older_than_seven_days", 0)),
