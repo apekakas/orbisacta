@@ -112,6 +112,22 @@
     "rights_note": "A hivatalos Global Voices országoldal alapján felvett RSS-jelölt. Csak saját, attribuálható tartalom; harmadik fél kivételeinek ellenőrzése szükséges. Élő RSS-teszt függőben."
   },
   {
+    "id": "gv-ru",
+    "name": "Global Voices – Oroszország",
+    "country": "RU",
+    "topic_hint": "egyéb",
+    "rss_url": "https://globalvoices.org/-/world/eastern-central-europe/russia/feed/",
+    "publisher": "Global Voices",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "rights_reference_url": "https://globalvoices.org/about/global-voices-attribution-policy/",
+    "ai_approved": true,
+    "enabled": true,
+    "feed_status": "candidate_needs_live_feed_check",
+    "author_required": true,
+    "rights_note": "Global Voices saját, CC BY 3.0 cikkek és hivatkozott szerzők; az országhír-RSS URL működését az első GitHub Actions gyűjtés ellenőrzi. Más kiadók szövege és képei nem vehetők át."
+  },
+  {
     "id": "gv-in",
     "name": "Global Voices – India",
     "country": "IN",
