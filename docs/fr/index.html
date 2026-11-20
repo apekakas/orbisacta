@@ -487,17 +487,20 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
 const i18n=window.OrbisI18n;
 const currentLang=i18n.choose(window.ORBIS_PAGE_LANG);
 const tr=key=>i18n.t(currentLang,key);
-const names=Object.fromEntries(['HU','DE','FR','IT','JP','BR','IN','CN','AU','SA','NG','ZA','US','GB','EU','WORLD'].map(code=>[code,i18n.name(currentLang,code)]));
+const names=Object.fromEntries(['HU','DE','FR','IT','JP','BR','RU','IN','CN','AU','SA','NG','ZA','US','GB','EU','WORLD'].map(code=>[code,i18n.name(currentLang,code)]));
 const topics=['Összes','politika','gazdaság','tudomány','sport','kultúra','egyéb'];
-const countryFlagAssets={HU:'hu',DE:'de',FR:'fr',IT:'it',JP:'jp',BR:'br',IN:'in',CN:'cn',AU:'au',SA:'sa',NG:'ng',ZA:'za',US:'us',GB:'gb',EU:'eu'};
+const countryFlagAssets={HU:'hu',DE:'de',FR:'fr',IT:'it',JP:'jp',BR:'br',RU:'ru',IN:'in',CN:'cn',AU:'au',SA:'sa',NG:'ng',ZA:'za',US:'us',GB:'gb',EU:'eu'};
 const countryAlphabet=new Intl.Collator(currentLang==='pt'?'pt-BR':currentLang,{usage:'sort',sensitivity:'base'});
 const topicIcons={politika:'🏛️',gazdaság:'📈',tudomány:'🔬',sport:'⚽',kultúra:'🎭',egyéb:'📰'};
 let previousCountries=[];
 try{
  const raw=JSON.parse(sessionStorage.getItem('orbisacta_countries')||'null');
  if(Array.isArray(raw))previousCountries=raw.filter(code=>code in names);
- const formerlyAll=['HU','DE','FR','IT','JP','BR','US','GB','EU','WORLD'];
- if(formerlyAll.every(code=>previousCountries.includes(code)))previousCountries=[];
+ const previousFullSelections=[
+  ['HU','DE','FR','IT','JP','BR','US','GB','EU','WORLD'],
+  ['HU','DE','FR','IT','JP','BR','IN','CN','AU','SA','NG','ZA','US','GB','EU','WORLD']
+ ];
+ if(previousFullSelections.some(all=>previousCountries.length===all.length&&all.every(code=>previousCountries.includes(code))))previousCountries=[];
 }catch(e){}
 let selected=new Set(previousCountries.length?previousCountries:Object.keys(names));
 let topic='Összes';

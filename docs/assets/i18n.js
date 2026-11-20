@@ -154,7 +154,7 @@ pt:{
  chooseCountry:"selecionar notícias de",showGlobe:"Mostrar globo interativo",hideGlobe:"Ocultar globo",featured:"Em destaque · recentes e importantes",language:"Idioma",translationNote:"Os textos em português são traduzidos a partir de resumos húngaros verificados."
 }
 };
-const fallbackCountries={HU:"Magyarország",DE:"Németország",FR:"Franciaország",IT:"Olaszország",JP:"Japán",BR:"Brazília",IN:"India",CN:"Kína",AU:"Ausztrália",SA:"Szaúd-Arábia",NG:"Nigéria",ZA:"Dél-Afrika",US:"Egyesült Államok",GB:"Egyesült Királyság"};
+const fallbackCountries={HU:"Magyarország",DE:"Németország",FR:"Franciaország",IT:"Olaszország",JP:"Japán",BR:"Brazília",RU:"Oroszország",IN:"India",CN:"Kína",AU:"Ausztrália",SA:"Szaúd-Arábia",NG:"Nigéria",ZA:"Dél-Afrika",US:"Egyesült Államok",GB:"Egyesült Királyság"};
 function supported(candidate){return Object.prototype.hasOwnProperty.call(locales,candidate)}
 function normalize(language){const code=String(language||"").toLowerCase().split("-")[0];return supported(code)?code:null}
 function preferred(){

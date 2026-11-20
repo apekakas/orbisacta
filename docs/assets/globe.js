@@ -11,6 +11,7 @@ const locations={
  IT:{name:"Olaszország",coord:[12.5,42.8]},
  JP:{name:"Japán",coord:[138.1,36.3]},
  BR:{name:"Brazília",coord:[-51.9,-14.3]},
+ RU:{name:"Oroszország",coord:[90.0,61.0]},
  IN:{name:"India",coord:[78.96,20.59]},
  CN:{name:"Kína",coord:[103.83,35.86]},
  AU:{name:"Ausztrália",coord:[133.78,-25.27]},
