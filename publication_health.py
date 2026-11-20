@@ -26,12 +26,14 @@ def parse_timestamp(value):
     return stamp.astimezone(timezone.utc)
 
 
-def verify_publication(status, news, quality, at=None, max_age_hours=3):
+def verify_publication(status, news, quality, at=None, max_age_hours=3, expected_updated=None):
     """Validate structural consistency, freshness and operational status."""
     now = at or datetime.now(timezone.utc)
     if now.tzinfo is None:
         raise ValueError("test time requires timezone")
     published_time = parse_timestamp(status.get("updated_utc"))
+    if expected_updated is not None and published_time != parse_timestamp(expected_updated):
+        raise ValueError("deployed version does not match this workflow run")
     age = now.astimezone(timezone.utc) - published_time
     if age > timedelta(hours=max_age_hours) or age < timedelta(minutes=-5):
         raise ValueError("publication status is stale or future-dated")
@@ -93,6 +95,8 @@ def main(argv=None):
     parser.add_argument("--folder", default="docs")
     parser.add_argument("--base", default="")
     parser.add_argument("--retries", type=int, default=4)
+    parser.add_argument("--expected-updated", default=None,
+                        help="Exact UTC timestamp from the freshly built local site-status.json")
     args = parser.parse_args(argv)
     if args.mode == "remote" and not args.base.startswith("https://"):
         parser.error("--base requires an HTTPS URL")
@@ -101,7 +105,7 @@ def main(argv=None):
         try:
             values = (read_local(args.folder) if args.mode == "local" else
                       read_remote(args.base, str(int(time.time()))))
-            result = verify_publication(*values)
+            result = verify_publication(*values, expected_updated=args.expected_updated)
             print(json.dumps(result, ensure_ascii=False))
             return 0
         except (ValueError, OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
