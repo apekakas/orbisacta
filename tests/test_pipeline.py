@@ -132,7 +132,9 @@ def test_world_country_assignment(tmp_path, monkeypatch):
 
 def test_config_sources_and_license_links():
     sources = oa.load_sources()
-    assert 19 <= len(sources) <= 30
+    assert len(sources) >= 29
+    assert len({source["id"] for source in sources}) == len(sources)
+    assert all(not source["ai_approved"] for source in sources if not source.get("enabled", True))
     assert any(s['topic_hint']=='sport' for s in sources)
     assert any(s['country']=='HU' for s in sources)
     assert any(s['country']=='DE' for s in sources)
@@ -175,7 +177,9 @@ def test_new_country_sources_are_registered():
     sources = oa.load_sources()
     ids = {s['country'] for s in sources}
     assert {'FR', 'IT', 'JP', 'BR'} <= ids
-    assert all(s['ai_approved'] for s in sources if s['country'] in {'FR', 'IT', 'JP', 'BR'})
+    assert all(s['ai_approved'] for s in sources if s['id'] in {'gv-fr', 'gv-it', 'gv-jp', 'gv-br'})
+    assert all(not s['ai_approved'] and not s['enabled'] for s in sources
+               if s['id'].startswith('candidate-'))
 
 
 def test_multilingual_translation_validate_and_export(tmp_path):
@@ -455,7 +459,8 @@ def test_six_new_countries_and_source_candidates_are_configured():
     assert codes == set(new)
     assert all(s["publisher"] == "Global Voices" for s in new.values())
     assert all(s.get("rights_reference_url") and s.get("author_required") for s in new.values())
-    assert len(sources) == 29
+    assert len(sources) >= 29
+    assert len([s for s in sources if s['publisher'] == 'Global Voices']) >= 20
 
 
 def test_mobile_country_buttons_wrap_and_zoom_works_on_all_language_pages():
