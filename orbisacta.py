@@ -508,6 +508,8 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
     # Do not spend API credits processing stale articles. Also reject feeds
     # without a trustworthy publication timestamp until reviewed.
     recent_cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat(timespec="seconds")
+    if max_items <= 0:
+        return {"processed": 0, "published": 0, "reason": "capacity_reached"}
     # Give only genuine, recently published articles rejected for short source
     # extraction ONE extra retrieval with the improved two-pass extractor.
     # No automatic retries for invalid evidence, hallucinations, wrong-country,
@@ -530,8 +532,6 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
     extraction_retries = len(eligible_retries)
     # Only authorized sources may occupy the preflight shortlist.
     # Otherwise a large backlog of ineligible rows can starve all AI work.
-    if max_items <= 0:
-        return {"processed": 0, "published": 0, "reason": "capacity_reached"}
     placeholders = ",".join("?" for _ in approved)
     candidates = con.execute(f"""SELECT * FROM articles WHERE status='pending_ai'
                          AND published_utc >= ?
