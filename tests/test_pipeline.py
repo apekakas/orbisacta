@@ -455,7 +455,7 @@ def test_six_new_countries_and_source_candidates_are_configured():
     assert codes == set(new)
     assert all(s["publisher"] == "Global Voices" for s in new.values())
     assert all(s.get("rights_reference_url") and s.get("author_required") for s in new.values())
-    assert len(sources) == 28
+    assert len(sources) == 29
 
 
 def test_mobile_country_buttons_wrap_and_zoom_works_on_all_language_pages():
@@ -863,3 +863,141 @@ def test_globe_and_country_selector_use_distinct_single_icons():
     assert 'showGlobe:"🌍 Földgömb megnyitása"' not in i18n
     assert i18n.count("storyExpand:") == 6
     assert i18n.count("storyCollapse:") == 6
+
+
+def test_russia_is_a_rights_gated_supported_news_country():
+    from pathlib import Path
+    assert oa.COUNTRIES["RU"] == "Oroszország"
+    sources = oa.load_sources()
+    ru = [item for item in sources if item["country"] == "RU"]
+    assert len(ru) == 1
+    source = ru[0]
+    assert source["id"] == "gv-ru"
+    assert source["publisher"] == "Global Voices"
+    assert source["rss_url"].endswith("/eastern-central-europe/russia/feed/")
+    assert source["ai_approved"] is True
+    assert source["license"] == "CC BY 3.0"
+    assert source["author_required"] is True
+    assets = Path(__file__).resolve().parents[1] / "docs"
+    flag = (assets / "assets" / "flags" / "ru.svg").read_text(encoding="utf-8")
+    assert flag.startswith("<svg")
+    assert "<script" not in flag
+    globe = (assets / "assets" / "globe.js").read_text(encoding="utf-8")
+    assert 'RU:{name:"Oroszország",coord:[90.0,61.0]}' in globe
+    for lang in ("hu", "en", "es", "fr", "de", "pt"):
+        page = (assets / lang / "index.html").read_text(encoding="utf-8")
+        assert "'RU'" in page
+        assert "RU:'ru'" in page
+
+
+def test_cyrillic_japanese_and_chinese_utf8_feed_storage_roundtrip(tmp_path):
+    from email.utils import format_datetime
+    now = format_datetime(datetime.now(timezone.utc), usegmt=True)
+    titles = [
+        "Россия: уровень занятости изменился",
+        "日本の研究者が新しい技術を発表",
+        "中国经济数据显示增长",
+    ]
+    for index, (country, title) in enumerate(zip(("RU","JP","CN"),titles)):
+        xml = ('<?xml version="1.0" encoding="utf-8"?>'
+               '<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">'
+               '<channel><item><title>'+title+'</title>'
+               '<link>https://example.org/native-'+str(index)+'</link>'
+               '<description>Источник 日本語 新闻</description>'
+               '<dc:creator>記者 Пётр 张伟</dc:creator>'
+               '<pubDate>'+now+'</pubDate></item></channel></rss>').encode("utf-8")
+        record = oa.parse_feed(xml)[0]
+        assert record["title"] == title
+        assert record["author"] == "記者 Пётр 张伟"
+        source = dict(SRC,country=country,id="native-"+str(index))
+        con = oa.connect(tmp_path / (country+".sqlite3"))
+        assert oa.insert_entries(con,source,[record])["new"] == 1
+        saved = con.execute("SELECT title_original,author FROM articles").fetchone()
+        assert saved["title_original"] == title
+        assert saved["author"] == "記者 Пётр 张伟"
+        json_payload = json.dumps({"original":saved["title_original"]},ensure_ascii=False)
+        assert title in json_payload and json.loads(json_payload)["original"] == title
+        con.close()
+
+
+def test_native_script_statistics_and_exact_unchanged_source_quotes():
+    from editorial_quality import numeric_values,check_numeric_facts
+    source = ("日本の失業率は4.6％に達し、中国の就業率は72.3％だった。"
+              "В России уровень безработицы составляет 4,6%.")
+    assert {"4.6","72.3"} <= numeric_values(source, require_unit=True)
+    points = [
+        {"sentence_hu":"Japánban a munkanélküliségi arány 4,6 százalék volt.",
+         "support_quote":"日本の失業率は4.6％に達し"},
+        {"sentence_hu":"Kínában a foglalkoztatási arány elérte a 72,3 százalékot.",
+         "support_quote":"中国の就業率は72.3％だった"},
+        {"sentence_hu":"A különböző országok adatait az eredeti jelentésekben tették közzé.",
+         "support_quote":"В России уровень безработицы составляет 4,6%"},
+        {"sentence_hu":"Az elemzés két állam munkaerőpiacának mutatóit hasonlítja össze.",
+         "support_quote":"日本の失業率は4.6％に達し"},
+        {"sentence_hu":"A foglalkoztatottsági mutatóra Kínáról található számadat.",
+         "support_quote":"中国の就業率は72.3％だった"}
+    ]
+    assert check_numeric_facts(source,points)==(True,"ok")
+    assert oa.check_evidence(source,points)[0] is True
+    assert oa.check_evidence(source,[{**points[0],"support_quote":"失業率は99.9％"}]+points[1:])[0] is False
+
+
+def test_raw_bytes_are_passed_to_multilingual_page_extractor(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+    import requests
+    raw = '<html><body>Привет 日本語 中文</body></html>'.encode("utf-8")
+    seen = []
+    fake_response = SimpleNamespace(
+        content=raw, text="badly decoded HTML", raise_for_status=lambda:None
+    )
+    monkeypatch.setattr(requests, "get", lambda *args, **kwargs:fake_response)
+    monkeypatch.setitem(sys.modules, "trafilatura", SimpleNamespace(
+        extract=lambda payload, **opts: (
+            seen.append((payload,opts)) or "Привет 日本語 中文"
+        )))
+    result=oa.extract_article_text("https://example.org/story")
+    assert result=="Привет 日本語 中文"
+    assert seen[0][0] == raw
+    assert seen[0][1]["include_tables"] is True
+
+
+def test_country_rescue_requires_unambiguous_supported_destination():
+    assert oa.resolve_event_country("HU",True,None) == "HU"
+    assert oa.resolve_event_country("HU",False,"RU") == "RU"
+    assert oa.resolve_event_country("RU",False,"JP") == "JP"
+    assert oa.resolve_event_country("JP",False,"WORLD") is None
+    assert oa.resolve_event_country("JP",False,"XX") is None
+    assert oa.resolve_event_country("RU",False,"RU") is None
+    assert oa.resolve_event_country("WORLD",True,"CN") == "CN"
+    assert oa.resolve_event_country("WORLD",True,"WORLD") == "WORLD"
+
+
+def test_country_rescue_can_publish_source_supported_foreign_event(tmp_path,monkeypatch):
+    con=oa.connect(tmp_path/"country-rescue.sqlite3")
+    oa.insert_entries(con,SRC,oa.parse_feed(RSS))
+    excerpt="The verified report states an actual policy change about Russia."
+    text=(excerpt+" Details corroborate the change.")*24
+    monkeypatch.setenv("OPENAI_API_KEY","offline-only")
+    monkeypatch.setattr(oa,"extract_article_text",lambda url:text)
+    monkeypatch.setattr(oa,"ai_summarize",lambda *args:{
+        "country_relevant":False,"event_country":"RU",
+        "title_hu":"Oroszországot érintő ellenőrzött fejlemény",
+        "topic":"politika","importance":78,
+        "points":[
+           {"sentence_hu":f"A(z) {i}. ellenőrzött tény Oroszországról szól a cikk szerint.",
+            "support_quote":excerpt} for i in range(1,6)
+        ]
+    })
+    report=oa.process(con,[SRC],1,"offline")
+    assert report["processed"]==1
+    assert report["published"]==1
+    row=con.execute("SELECT country,status FROM articles").fetchone()
+    assert row["country"]=="RU" and row["status"]=="published"
+    con.close()
+
+
+def test_cjk_article_threshold_retains_strict_five_fact_gate():
+    assert oa.is_compact_cjk("日本語の記事を伝える研究結果。"*25) is True
+    assert oa.is_compact_cjk("Русский текст научного сообщения. "*25) is False
+    assert oa.is_compact_cjk("English news story about science. "*25) is False
