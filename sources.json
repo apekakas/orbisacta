@@ -593,18 +593,19 @@
   },
   {
     "id": "candidate-ec-press",
-    "name": "European Commission – Press",
+    "name": "Európai Bizottság – Sajtóközlemények",
     "country": "EU",
     "topic_hint": "politika",
-    "rss_url": "https://ec.europa.eu/commission/presscorner/api/rss",
+    "rss_url": "https://ec.europa.eu/commission/presscorner/api/rss?language=en",
     "publisher": "European Commission",
-    "license": "Unreviewed — metadata only",
-    "license_url": "",
-    "rights_reference_url": "",
-    "ai_approved": false,
-    "enabled": false,
-    "feed_status": "candidate_requires_live_feed_and_rights_review",
+    "license": "CC BY 4.0 (EU-owned content, exceptions apply)",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "rights_reference_url": "https://commission.europa.eu/legal-notice_en",
+    "ai_approved": true,
+    "enabled": true,
+    "feed_status": "verified_rss_endpoint_pending_actions_integration",
     "author_required": false,
-    "rights_note": "Discovery candidate only. Confirm RSS endpoint, editorial rights, access conditions and extraction before enabling. Do not use for AI processing automatically."
+    "rights_note": "Only European Commission-issued press releases (IP identifiers). Respect third-party exclusions; do not reuse photos, media, external quotations as independent licensed content. Attribute European Commission, source link and AI adaptation. Feed endpoint identified as RSS; live GitHub ingestion and article extraction must be verified.",
+    "allowed_url_path_regex": "(?i)/presscorner/detail/en/ip_[0-9]"
   }
 ]
