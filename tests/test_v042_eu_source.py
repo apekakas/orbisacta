@@ -6,7 +6,7 @@ from orbisacta import load_sources, select_source_entries
 
 
 def test_eu_commission_licensing_and_activation():
-    src = next(x for x in load_sources() if x["id"] == "candidate-ec-press")
+    src = next(x for x in load_sources() if x["id"] == "ec-press")
     assert src["enabled"] and src["ai_approved"]
     assert src["country"] == "EU"
     assert src["license_url"].startswith("https://creativecommons.org/licenses/by/4.0/")
@@ -16,7 +16,7 @@ def test_eu_commission_licensing_and_activation():
 
 
 def test_only_commission_press_releases_pass_url_gate():
-    src = next(x for x in load_sources() if x["id"] == "candidate-ec-press")
+    src = next(x for x in load_sources() if x["id"] == "ec-press")
     urls = [
         "https://ec.europa.eu/commission/presscorner/detail/en/speech_26_2526",
         "https://ec.europa.eu/commission/presscorner/detail/en/statement_26_2528",
@@ -24,10 +24,10 @@ def test_only_commission_press_releases_pass_url_gate():
         "https://ec.europa.eu/commission/presscorner/detail/en/ip_26_2511",
         "https://external.example/commission/presscorner/detail/en/ip_26_123",
     ]
-    # Domain gating is tested separately as the path filter is intentionally just a path gate.
+    # Article host and press-release identifier must both match.
     entries = [{"url": u} for u in urls[:4]]
     assert [x["url"] for x in select_source_entries(src, entries, 12)] == urls[2:4]
-    assert len(select_source_entries(src, entries, 1)) == 1
+    assert len(select_source_entries(src, entries, 1)) == 1\n    assert select_source_entries(src, [{"url": urls[-1]}], 5) == []
 
 
 def test_other_sources_keep_original_selection_order():
@@ -36,6 +36,6 @@ def test_other_sources_keep_original_selection_order():
 
 
 def test_remaining_unreviewed_publishers_stay_disabled():
-    candidates = [s for s in load_sources() if s["id"].startswith("candidate-") and s["id"] != "candidate-ec-press"]
+    candidates = [s for s in load_sources() if s["id"].startswith("candidate-") ]
     assert len(candidates) == 8
     assert all(not s["enabled"] and not s["ai_approved"] for s in candidates)
