@@ -573,8 +573,12 @@ function renderControls(){
  document.getElementById('topic-title').textContent=tr('topicLabel');
  document.getElementById('show-news').textContent=tr('viewResults');
  const topicEl=document.getElementById('topics');topicEl.replaceChildren();
+ // Topic totals reflect the selected countries and archive date, independently
+ // of the currently selected topic. They use the same published articles as the feed.
+ const topicPool=articles.filter(a=>selected.has(a.country)&&inSelectedDate(a));
  topics.forEach(code=>{
-  const label=code==='Összes'?tr('allTopics'):topicIcons[code]+' '+tr('topics')[code];
+  const total=code==='Összes'?topicPool.length:topicPool.filter(a=>a.topic===code).length;
+  const label=(code==='Összes'?tr('allTopics'):topicIcons[code]+' '+tr('topics')[code])+' ('+total+')';
   topicEl.append(btn(label,topic===code,()=>{topic=code;renderControls();render()}));
  });
  rememberFilters();

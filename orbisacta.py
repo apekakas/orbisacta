@@ -511,11 +511,16 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
     # proportionally rather than silently stopping at 40 rows.
     rows = select_diverse_pending(candidates, max_items * 4)
     processed = published = 0
+    preflight_checked = 0
+    preflight_errors = {"author_missing": 0, "insufficient_article_text": 0,
+                        "source_fetch_error": 0, "other": 0}
     for row in rows:
         if processed >= max_items:
             break
         if row["source_id"] not in approved:
             continue
+        preflight_checked += 1
+        model_started = False
         try:
             src = source_lookup(sources)[row["source_id"]]
             if src.get("author_required") and not row["author"].strip():
@@ -527,6 +532,7 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
             # Count only actual model invocations, not rights/HTML preflight
             # rejections. This keeps API costs at the configured cap.
             processed += 1
+            model_started = True
             result = ai_summarize(row, text, model)
             topic = result.get("topic", "egyéb")
             if topic not in TOPICS:
@@ -560,6 +566,17 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
                  min(100, max(0, int(result.get("importance", 0)))), status, err, now_utc(), row["id"]))
         except Exception as exc:
             name = type(exc).__name__
+            if not model_started:
+                reason = str(exc)
+                if "author_missing" in reason:
+                    preflight_errors["author_missing"] += 1
+                elif "insufficient_article_text" in reason:
+                    preflight_errors["insufficient_article_text"] += 1
+                elif name in {"HTTPError", "ConnectionError", "Timeout", "ReadTimeout",
+                              "ConnectTimeout", "SSLError", "TooManyRedirects"}:
+                    preflight_errors["source_fetch_error"] += 1
+                else:
+                    preflight_errors["other"] += 1
             if name in {"RateLimitError", "AuthenticationError", "APITimeoutError", "APIConnectionError"}:
                 # Stop on API service errors instead of spending the entire batch
                 # on repeated requests. Keep the article retriable.
@@ -567,11 +584,13 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
                             (f"{name}: api_unavailable", now_utc(), row["id"]))
                 con.commit()
                 print(f"AI-feldolgozás leállítva: {name}. API-kvóta, számlázás vagy kapcsolat ellenőrzendő.")
-                return {"processed": processed, "published": published, "reason": "api_unavailable"}
+                return {"processed": processed, "published": published, "reason": "api_unavailable",
+                        "preflight_checked": preflight_checked, "preflight_errors": preflight_errors}
             con.execute("UPDATE articles SET status='needs_review', error=?, processed_utc=? WHERE id=?",
                         (f"{name}: {str(exc)[:220]}", now_utc(), row["id"]))
         con.commit()
-    return {"processed": processed, "published": published}
+    return {"processed": processed, "published": published,
+            "preflight_checked": preflight_checked, "preflight_errors": preflight_errors}
 
 
 def export_json(con, destination: Path = PUBLISH_PATH):
@@ -644,6 +663,11 @@ def export_public_status(report: dict, destination: Path = PUBLIC_STATUS_PATH):
         "ai_configured": bool(os.environ.get("OPENAI_API_KEY")),
         "items_published_in_run": int(ai.get("published", 0)),
         "ai_attempts_in_run": int(ai.get("processed", 0)),
+        "ai_preflight_checked_in_run": int(ai.get("preflight_checked", 0)),
+        "ai_preflight_author_missing": int(ai.get("preflight_errors", {}).get("author_missing", 0)),
+        "ai_preflight_short_article": int(ai.get("preflight_errors", {}).get("insufficient_article_text", 0)),
+        "ai_preflight_source_fetch_error": int(ai.get("preflight_errors", {}).get("source_fetch_error", 0)),
+        "ai_preflight_other_error": int(ai.get("preflight_errors", {}).get("other", 0)),
         "translations_completed_in_run": int(report.get("translations", {}).get("completed", 0)),
         "live_article_count": int(report.get("exported", 0)),
         "mode": "pilot",
