@@ -209,6 +209,23 @@ def insert_entries(con, source: dict, entries: list[dict]) -> dict:
     return {"new": added, "duplicates": duplicate_urls, "near_duplicates": near_duplicates}
 
 
+def select_source_entries(source: dict, entries: list[dict], limit: int) -> list[dict]:
+    """Optional per-source URL gate before limiting the feed's newest entries.
+
+    This avoids consuming the source's per-run quota on out-of-scope material
+    (e.g. Commission speeches vs. actual press releases).
+    """
+    pattern = source.get("allowed_url_path_regex")
+    if pattern:
+        try:
+            regex = re.compile(pattern)
+        except re.error as exc:
+            raise ValueError(f"Invalid source URL filter: {source['id']}") from exc
+        entries = [item for item in entries
+                   if regex.search(urlsplit(item.get("url", "")).path)]
+    return entries[:max(0, int(limit))]
+
+
 def collect(con, sources, limit_per_feed=12):
     stats = []
     for source in sources:
@@ -216,7 +233,7 @@ def collect(con, sources, limit_per_feed=12):
             continue
         result = {"source": source["name"], "country": source["country"], "new": 0}
         try:
-            entries = parse_feed(feed_fetch(source["rss_url"]))[:limit_per_feed]
+            entries = select_source_entries(source, parse_feed(feed_fetch(source["rss_url"])), limit_per_feed)
             result.update(insert_entries(con, source, entries))
             result["read"] = len(entries)
             result["status"] = "ok"
