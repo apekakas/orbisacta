@@ -88,12 +88,15 @@ def connect(db_path: Path = DB_PATH):
         published_utc TEXT, excerpt TEXT, text_excerpt TEXT,
         title_hu TEXT, summary_hu TEXT, context_hu TEXT DEFAULT '', topic TEXT,
         importance INTEGER DEFAULT 0, status TEXT NOT NULL,
-        error TEXT, ingested_utc TEXT NOT NULL, processed_utc TEXT
+        error TEXT, ingested_utc TEXT NOT NULL, processed_utc TEXT,
+        extraction_retry_count INTEGER NOT NULL DEFAULT 0
     )""")
     fields = {x[1] for x in con.execute("PRAGMA table_info(articles)").fetchall()}
     for field in ("author", "license", "license_url", "rights_reference_url", "context_hu"):
         if field not in fields:
             con.execute(f"ALTER TABLE articles ADD COLUMN {field} TEXT DEFAULT ''")
+    if "extraction_retry_count" not in fields:
+        con.execute("ALTER TABLE articles ADD COLUMN extraction_retry_count INTEGER NOT NULL DEFAULT 0")
     con.execute("CREATE INDEX IF NOT EXISTS by_country_status ON articles(country, status)")
     con.commit()
     from international import install_schema
@@ -288,7 +291,17 @@ def extract_article_text(url: str) -> str:
     # Pass source bytes through the extractor's charset detection. requests'
     # response.text may incorrectly assume Latin-1 for Japanese, Chinese or Russian.
     text = trafilatura.extract(response.content, include_comments=False, include_tables=True)
-    return re.sub(r"\s+", " ", text or "").strip()[:16000]
+    primary = re.sub(r"\s+", " ", text or "").strip()
+    if len(primary) < 550:
+        # Recall-oriented extraction uses the exact same downloaded source page.
+        # It may recover article paragraphs without relying on RSS snippets,
+        # headlines, AI-generated filler, or unrelated external websites.
+        alternate = trafilatura.extract(response.content, include_comments=False,
+                                         include_tables=True, favor_recall=True)
+        recovered = re.sub(r"\s+", " ", alternate or "").strip()
+        if len(recovered) > len(primary):
+            primary = recovered
+    return primary[:16000]
 
 
 def check_evidence(article_text: str, points: list) -> tuple[bool, str]:
@@ -495,6 +508,26 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
     # Do not spend API credits processing stale articles. Also reject feeds
     # without a trustworthy publication timestamp until reviewed.
     recent_cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat(timespec="seconds")
+    # Give only genuine, recently published articles rejected for short source
+    # extraction ONE extra retrieval with the improved two-pass extractor.
+    # No automatic retries for invalid evidence, hallucinations, wrong-country,
+    # author issues, copyright restrictions or stale/undated records.
+    retry_placeholders = ",".join("?" for _ in approved)
+    eligible_retries = con.execute(
+        f"""SELECT id FROM articles WHERE status='needs_review'
+              AND error LIKE '%insufficient_article_text%'
+              AND extraction_retry_count=0
+              AND published_utc >= ?
+              AND source_id IN ({retry_placeholders})
+              ORDER BY published_utc DESC LIMIT 8""",
+        (recent_cutoff, *sorted(approved)),
+    ).fetchall()
+    for retry in eligible_retries:
+        con.execute("""UPDATE articles SET status='pending_ai',
+                       extraction_retry_count=1, error='retry_after_better_extraction'
+                       WHERE id=? AND status='needs_review'""", (retry["id"],))
+    con.commit()
+    extraction_retries = len(eligible_retries)
     # Only authorized sources may occupy the preflight shortlist.
     # Otherwise a large backlog of ineligible rows can starve all AI work.
     if max_items <= 0:
@@ -585,12 +618,14 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
                 con.commit()
                 print(f"AI-feldolgozás leállítva: {name}. API-kvóta, számlázás vagy kapcsolat ellenőrzendő.")
                 return {"processed": processed, "published": published, "reason": "api_unavailable",
-                        "preflight_checked": preflight_checked, "preflight_errors": preflight_errors}
+                        "preflight_checked": preflight_checked, "preflight_errors": preflight_errors,
+                        "extraction_retries": extraction_retries}
             con.execute("UPDATE articles SET status='needs_review', error=?, processed_utc=? WHERE id=?",
                         (f"{name}: {str(exc)[:220]}", now_utc(), row["id"]))
         con.commit()
     return {"processed": processed, "published": published,
-            "preflight_checked": preflight_checked, "preflight_errors": preflight_errors}
+            "preflight_checked": preflight_checked, "preflight_errors": preflight_errors,
+            "extraction_retries": extraction_retries}
 
 
 def export_json(con, destination: Path = PUBLISH_PATH):
@@ -664,6 +699,7 @@ def export_public_status(report: dict, destination: Path = PUBLIC_STATUS_PATH):
         "items_published_in_run": int(ai.get("published", 0)),
         "ai_attempts_in_run": int(ai.get("processed", 0)),
         "ai_preflight_checked_in_run": int(ai.get("preflight_checked", 0)),
+        "extraction_retries_in_run": int(ai.get("extraction_retries", 0)),
         "ai_preflight_author_missing": int(ai.get("preflight_errors", {}).get("author_missing", 0)),
         "ai_preflight_short_article": int(ai.get("preflight_errors", {}).get("insufficient_article_text", 0)),
         "ai_preflight_source_fetch_error": int(ai.get("preflight_errors", {}).get("source_fetch_error", 0)),
