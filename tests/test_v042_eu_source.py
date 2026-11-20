@@ -27,7 +27,8 @@ def test_only_commission_press_releases_pass_url_gate():
     # Article host and press-release identifier must both match.
     entries = [{"url": u} for u in urls[:4]]
     assert [x["url"] for x in select_source_entries(src, entries, 12)] == urls[2:4]
-    assert len(select_source_entries(src, entries, 1)) == 1\n    assert select_source_entries(src, [{"url": urls[-1]}], 5) == []
+    assert len(select_source_entries(src, entries, 1)) == 1
+    assert select_source_entries(src, [{"url": urls[-1]}], 5) == []
 
 
 def test_other_sources_keep_original_selection_order():
