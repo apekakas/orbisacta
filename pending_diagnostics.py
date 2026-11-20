@@ -42,6 +42,7 @@ def pending_breakdown(con, sources, at=None):
 
 def collect_breakdown(stats):
     from feed_freshness import aggregate_freshness
+    from feed_overlap import aggregate_overlap
     return {
         "feeds_checked": len(stats),
         "feeds_fetch_ok": sum(x.get("status") == "ok" for x in stats),
@@ -50,4 +51,5 @@ def collect_breakdown(stats):
         "entries_new": sum(int(x.get("new", 0)) for x in stats),
         "feed_errors": sum(x.get("status") == "error" for x in stats),
         **aggregate_freshness(stats),
+        **aggregate_overlap(stats),
     }
