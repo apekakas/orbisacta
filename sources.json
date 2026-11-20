@@ -400,6 +400,26 @@
     "rights_note": "Jogok és gépi olvasási engedély kiegészítő ellenőrzése; ezért AI alapból tiltva."
   },
   {
+    "id": "govuk-news",
+    "name": "GOV.UK – Friss kormányzati hírek",
+    "country": "GB",
+    "topic_hint": "politika",
+    "rss_url": "https://www.gov.uk/search/news-and-communications.atom",
+    "publisher": "GOV.UK / UK Government",
+    "license": "Open Government Licence 3.0 (Crown copyright content, exceptions apply)",
+    "license_url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+    "rights_reference_url": "https://www.gov.uk/help/terms-conditions",
+    "ai_approved": true,
+    "enabled": true,
+    "feed_status": "official_live_news_page_and_atom_endpoint_listed_pending_live_ingestion",
+    "author_required": false,
+    "rights_note": "Only GOV.UK-originated Crown-copyright government/news announcements. No speeches, third-party texts, logos, photographs or claims of government endorsement. Attribute GOV.UK and source URL; explicit publication timestamps required.",
+    "allowed_url_hosts": [
+      "www.gov.uk"
+    ],
+    "allowed_url_path_regex": "^/government/news/[^/]+$"
+  },
+  {
     "id": "uk-treasury",
     "name": "HM Treasury – Közlemények",
     "country": "GB",
