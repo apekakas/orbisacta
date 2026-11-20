@@ -7,7 +7,9 @@ import re
 import unicodedata
 from decimal import Decimal, InvalidOperation
 
-NUMBER = re.compile(r"(?<![\w])(?:\d{1,3}(?:[,\.\u00a0\u202f ]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)(?![\w])")
+# Cyrillic, Han and kana characters can be directly adjacent to a number:
+# e.g. 失業率4.6％ or безработица4,6%. Keep ASCII word parts excluded.
+NUMBER = re.compile(r"(?<![0-9A-Za-z])(?:\d{1,3}(?:[,\.\u00a0\u202f ]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)(?![0-9A-Za-z])")
 STATISTIC_UNITS = re.compile(
     r"%|€|\$|£|\b(?:percent|per cent|million|billion|thousand|"
     r"unemployment|employment|employee|employees|workers|jobs|wages?|"
@@ -15,7 +17,10 @@ STATISTIC_UNITS = re.compile(
     r"households|salary|salaries|income|revenue|gdp|inflation|"
     r"eur|usd|gbp|kilomet(?:er|re)s?|tonnes?|tons?|"
     r"százalék\w*|millió\w*|milliárd\w*|ezer\w*|fő|foglalkoztat\w*|munkanélkül\w*|"
-    r"bér\w*|lakos\w*|jövedelem\w*|árbevétel\w*|növekedés\w*)\b",
+    r"bér\w*|lakos\w*|jövedelem\w*|árbevétel\w*|növekedés\w*|"
+    r"процент\w*|миллион\w*|миллиард\w*|тысяч\w*|рубл\w*|"
+    r"безработиц\w*|занятос\w*|населени\w*|доход\w*|зарплат\w*)\b|"
+    r"(?:人口|失業|就業|就业|増加|增长|経済|经济|万人|万|億|亿|兆|円|元|人|件|吨|吨|％)",
     re.IGNORECASE,
 )
 DATE = re.compile(r"\b(?:19|20)\d{2}[-/]\d{1,2}[-/]\d{1,2}\b")
