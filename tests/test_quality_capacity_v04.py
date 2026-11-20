@@ -42,3 +42,23 @@ def test_published_today_uses_approval_day_not_article_day():
     at = datetime(2026, 11, 20, 12, tzinfo=timezone.utc)
     assert daily_published_count(con, at) == 2
     con.close()
+
+
+def test_approved_forty_calls_per_run():
+    p = capacity_plan(0, requested_per_run=40, approved_per_run=40)
+    assert p["effective_max_ai"] == 40
+    assert not p["api_scaling_requires_approval"]
+
+
+def test_publication_target_never_authorizes_extra_spend():
+    p = capacity_plan(0, requested_per_run=999, approved_per_run=40)
+    assert p["effective_max_ai"] == 40
+
+
+def test_six_hour_workflow_has_explicit_approval_and_translation_cap():
+    from pathlib import Path
+    content = (Path(__file__).resolve().parents[1] /
+               ".github/workflows/orbisacta-online.yml").read_text(encoding="utf-8")
+    assert "17 0,6,12,18 * * *" in content
+    assert 'ORBIS_APPROVED_MAX_AI_PER_RUN: "40"' in content
+    assert "--max-ai 40 --daily-target 100 --max-translations 25" in content
