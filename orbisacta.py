@@ -567,6 +567,8 @@ def export_public_status(report: dict, destination: Path = PUBLIC_STATUS_PATH):
         "feeds_ok": sum(s.get("status") == "ok" for s in collection),
         "ai_configured": bool(os.environ.get("OPENAI_API_KEY")),
         "items_published_in_run": int(ai.get("published", 0)),
+        "ai_attempts_in_run": int(ai.get("processed", 0)),
+        "translations_completed_in_run": int(report.get("translations", {}).get("completed", 0)),
         "live_article_count": int(report.get("exported", 0)),
         "mode": "pilot",
         "daily_target": int(report.get("capacity", {}).get("daily_target", 100)),
