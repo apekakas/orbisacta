@@ -7,14 +7,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_hungarian_export_does_not_cut_off_seven_day_target():
     source = (ROOT / "orbisacta.py").read_text(encoding="utf-8")
-    match = re.search(r"ORDER BY importance DESC, published_utc DESC LIMIT (\\d+)", source)
+    match = re.search(r"ORDER BY importance DESC, published_utc DESC LIMIT (\d+)", source)
     assert match, "Hungarian archive query missing"
     assert int(match.group(1)) >= 700
 
 
 def test_translated_archives_have_same_capacity():
     source = (ROOT / "international.py").read_text(encoding="utf-8")
-    match = re.search(r"ORDER BY a.importance DESC, a.published_utc DESC LIMIT (\\d+)", source)
+    match = re.search(r"ORDER BY a.importance DESC, a.published_utc DESC LIMIT (\d+)", source)
     assert match, "Multilingual archive query missing"
     assert int(match.group(1)) >= 700
 
