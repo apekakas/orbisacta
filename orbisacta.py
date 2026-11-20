@@ -386,6 +386,17 @@ READER-FIRST EDITORIAL PRINCIPLE (mandatory for every news brief):
 A reader without specialist knowledge must understand WHAT happened and WHY
 it matters on first reading. Prefer familiar, precise Hungarian words over
 unexplained statistical, medical, legal, political and scientific jargon.
+GENERAL ABBREVIATION RULE (mandatory, every topic, every country):
+At the FIRST occurrence of any abbreviation or initialism unfamiliar to a
+general reader, give its accurate Hungarian meaning in parentheses, for
+example "STEM (természettudományok, technológia, mérnöki tudományok és
+matematika)". Do this once in the five-sentence brief and then use the
+short form without repeating the definition. Ordinary universally recognized
+terms (EU, USA) need no expansion. Do not guess ambiguous acronyms: when
+neither reliable source context nor an established meaning identifies them,
+avoid them if possible, otherwise use a plain-language description without
+claiming a fabricated expansion. Apply the rule also to medical, economic,
+technical, international-organization and government abbreviations.
 If a technical term is not necessary for factual accuracy, replace it with a
 plain-language equivalent. If it is necessary (e.g. a named statistical
 indicator), explain it in one short, accessible clause when first mentioned,
@@ -639,6 +650,11 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
             target_country = target_country or row["country"]
             points = result.get("points", []) if status == "published" else []
             summary = " ".join(p["sentence_hu"].strip() for p in points)
+            if status == "published":
+                # Vetted semantic definitions are added after the original
+                # quote/evidence/number validation; never edit support_quote.
+                from hungarian_language import expand_verified_abbreviations
+                summary = expand_verified_abbreviations(summary)
             from editorial_quality import validated_background
             context_hu = validated_background(text, result.get("local_terms", [])) if status == "published" else ""
             con.execute("""UPDATE articles SET title_hu=?, summary_hu=?, context_hu=?, topic=?, country=?,
@@ -691,12 +707,14 @@ def export_json(con, destination: Path = PUBLISH_PATH):
           ORDER BY importance DESC, published_utc DESC LIMIT 1000""", (cutoff, tomorrow)).fetchall()
     # Backfill safe, meaning-preserving copy-edits for previously published
     # Hungarian briefs in the seven-day archive. No AI or DB changes.
-    from hungarian_language import polish_hungarian
+    from hungarian_language import polish_hungarian, expand_verified_abbreviations
     public_articles = [dict(r) for r in rows]
     for item in public_articles:
         for field in ("title_hu", "summary_hu", "context_text"):
             if item.get(field):
                 item[field] = polish_hungarian(item[field])
+        if item.get("summary_hu"):
+            item["summary_hu"] = expand_verified_abbreviations(item["summary_hu"])
     payload = {"project": "OrbisActa", "generated_utc": now_utc(),
                "archive": archive,
                "countries": COUNTRIES, "topics": list(TOPICS),
