@@ -39,11 +39,13 @@ def test_intake_reports_empty_feeds_separately_from_success():
         {"status": "ok", "read": 12, "new": 2},
         {"status": "error", "new": 0},
     ])
-    assert d == {
+    assert all(d[k] == value for k, value in {
         "feeds_checked": 3, "feeds_fetch_ok": 2,
         "feeds_empty": 1, "entries_read": 12,
         "entries_new": 2, "feed_errors": 1,
-    }
+    }.items())
+    assert d["feeds_with_recent_entries"] == 0
+    assert d["recent_entries"] == 0
 
 
 def test_processing_selects_approved_sources_before_limit(monkeypatch, tmp_path):
