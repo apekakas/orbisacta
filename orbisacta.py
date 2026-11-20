@@ -215,6 +215,10 @@ def select_source_entries(source: dict, entries: list[dict], limit: int) -> list
     This avoids consuming the source's per-run quota on out-of-scope material
     (e.g. Commission speeches vs. actual press releases).
     """
+    allowed_hosts = set(source.get("allowed_url_hosts", []))
+    if allowed_hosts:
+        entries = [item for item in entries
+                   if urlsplit(item.get("url", "")).hostname in allowed_hosts]
     pattern = source.get("allowed_url_path_regex")
     if pattern:
         try:
