@@ -382,6 +382,21 @@ source quote. Give the value, unit, period and comparison (when relevant).
 Preserve percentage versus percentage-point differences, denominators,
 and magnitudes. Use digits; do not mistake years or dates for metrics.
 Never invent figures if the article contains fewer than two statistics.
+POLISHED HUNGARIAN IS MANDATORY: Write like a careful native Hungarian news editor,
+not a literal machine translator. Translate generic English technical terms to
+their established Hungarian equivalents; keep only official names, brands and
+genuinely standard loanwords. For healthcare news use "emlőrák" (not
+"mammákat érintő rák"), "teljes emlőeltávolítás" for "total mastectomy",
+and "részleges emlőeltávolítás" for "partial mastectomy"; explain specialized
+terms naturally where relevant. Belgium in Hungarian is "Belgium", never
+"Belgaország". Use Hungarian decimal commas ("70,1" not "70.1") and
+readable thousands-grouping ("560 730"); retain every magnitude, unit,
+year, denominator, and percentage-versus-percentage-point distinction.
+Do not mix English grammatical fragments into Hungarian sentences.
+Before finalizing, reread all five Hungarian sentences for grammar, clear
+subject–verb agreement, natural case endings, and accurate terminology.
+The support_quote fields MUST remain exact verbatim source-language excerpts
+and MUST NOT be rewritten or Hungarianized.
 Additionally return "local_terms": 0-2 objects of form
 {"term_original":"exact term appearing in source_text",
 "explanation_hu":"one fluent, informative Hungarian explanatory sentence",
@@ -567,6 +582,15 @@ def process(con, sources, max_items=12, model="gpt-4o-mini"):
             processed += 1
             model_started = True
             result = ai_summarize(row, text, model)
+            # Proofread only Hungarian output; never alter exact source quotes.
+            from hungarian_language import polish_hungarian, check_hungarian_language
+            result["title_hu"] = polish_hungarian(result.get("title_hu", ""))
+            for point in result.get("points", []):
+                if isinstance(point, dict):
+                    point["sentence_hu"] = polish_hungarian(point.get("sentence_hu", ""))
+                    valid_language, language_reason = check_hungarian_language(point["sentence_hu"])
+                    if not valid_language:
+                        raise ValueError(language_reason)
             topic = result.get("topic", "egyéb")
             if topic not in TOPICS:
                 raise ValueError("invalid_topic")
@@ -641,10 +665,18 @@ def export_json(con, destination: Path = PUBLISH_PATH):
           rights_reference_url, title_hu, url, published_utc, summary_hu, context_hu AS context_text, importance FROM articles WHERE status='published'
           AND published_utc >= ? AND published_utc < ?
           ORDER BY importance DESC, published_utc DESC LIMIT 1000""", (cutoff, tomorrow)).fetchall()
+    # Backfill safe, meaning-preserving copy-edits for previously published
+    # Hungarian briefs in the seven-day archive. No AI or DB changes.
+    from hungarian_language import polish_hungarian
+    public_articles = [dict(r) for r in rows]
+    for item in public_articles:
+        for field in ("title_hu", "summary_hu", "context_text"):
+            if item.get(field):
+                item[field] = polish_hungarian(item[field])
     payload = {"project": "OrbisActa", "generated_utc": now_utc(),
                "archive": archive,
                "countries": COUNTRIES, "topics": list(TOPICS),
-               "articles": [dict(r) for r in rows], "count": len(rows),
+               "articles": public_articles, "count": len(rows),
                "notice": "AI-based Hungarian summaries, adapted from attributed source text. No original photos. Open original for context."}
     destination.parent.mkdir(parents=True, exist_ok=True)
     payload["language"] = "hu"
