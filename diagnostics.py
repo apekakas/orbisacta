@@ -16,6 +16,8 @@ try:
     con.row_factory = sqlite3.Row
     per_source = source_failure_breakdown(con)
     source_totals = aggregate_failures(per_source)
+    from multilingual_quality import audit_translation_rows
+    multilingual_audit = audit_translation_rows(con)
 finally:
     con.close()
 
@@ -47,6 +49,8 @@ def classify(message: str) -> str:
 
 print("Állapotok:", dict(statuses))
 print("AI ellenőrzési hibaokok:", dict(Counter(classify(x[0]) for x in errors)))
+print("Korábbi öt idegen nyelvű fordítás ellenőrzése (összesítés, automatikus módosítás nélkül):",
+      multilingual_audit)
 print("Forrásonkénti QA összesítés (egyedi cikkek; nem RSS-megjelenések):", source_totals)
 for item in per_source:
     if item["short_text"] or item["quote_mismatch"] or item["numeric_evidence"]:
