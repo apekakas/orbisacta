@@ -13,7 +13,15 @@ TERMS = (
     (r"\btotal mastectom(?:y|ies)\b", "teljes emlőeltávolítás"),
     (r"\bpartial mastectom(?:y|ies)-t\b", "részleges emlőeltávolítást"),
     (r"\bpartial mastectom(?:y|ies)\b", "részleges emlőeltávolítás"),
-    (r"\bmammákat érintő rák\b", "emlőrák"),
+    # Safe established plain-Hungarian wording for a common EU indicator.
+    (r"\bsúlyos anyagi és társadalmi deprivációs rátá", "súlyos anyagi és társadalmi nélkülözés arányá"),
+    (r"\bsúlyos anyagi és társadalmi deprivációt\b", "súlyos anyagi és társadalmi nélkülözést"),
+    (r"\bsúlyos anyagi és társadalmi depriváció\b", "súlyos anyagi és társadalmi nélkülözés"),
+    (r"\bdeprivációs rátával\b", "nélkülözési aránnyal"),
+    (r"\bdeprivációs rátát\b", "nélkülözési arányt"),
+    (r"\bdeprivációs ráta\b", "nélkülözés aránya"),
+    (r"\bdeprivációt\b", "nélkülözést"),
+        (r"\bmammákat érintő rák\b", "emlőrák"),
     (r"\bBelgaország", "Belgium"),
 )
 
