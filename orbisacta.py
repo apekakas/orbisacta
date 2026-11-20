@@ -260,6 +260,8 @@ def collect(con, sources, limit_per_feed=12):
             entries = select_source_entries(source, parse_feed(feed_fetch(source["rss_url"])), limit_per_feed)
             from feed_freshness import classify_dates
             result.update(classify_dates(entries))
+            from feed_overlap import feed_overlap
+            result.update(feed_overlap(con, entries))
             result.update(insert_entries(con, source, entries))
             result["read"] = len(entries)
             result["status"] = "ok"
@@ -619,6 +621,14 @@ def export_public_status(report: dict, destination: Path = PUBLIC_STATUS_PATH):
         "feed_entries_recent": int(report.get("intake", {}).get("recent_entries", 0)),
         "feed_entries_stale": int(report.get("intake", {}).get("stale_entries", 0)),
         "feed_entries_undated": int(report.get("intake", {}).get("undated_entries", 0)),
+        "feed_recent_known": int(report.get("intake", {}).get("recent_known_url", 0)),
+        "feed_recent_unseen": int(report.get("intake", {}).get("recent_unseen_url", 0)),
+        "feed_recent_known_published": int(report.get("intake", {}).get("recent_known_published", 0)),
+        "feed_recent_known_rejected": (
+            int(report.get("intake", {}).get("recent_known_needs_review", 0))
+            + int(report.get("intake", {}).get("recent_known_wrong_country", 0))
+        ),
+        "feed_recent_known_pending": int(report.get("intake", {}).get("recent_known_pending_ai", 0)),
         "recovered_publication_dates": int(report.get("intake", {}).get("recovered_publication_dates", 0)),
         "entries_new_in_run": int(report.get("intake", {}).get("entries_new", 0)),
         "pending_eligible_before_ai": int(report.get("pending_before_ai", {}).get("recent_eligible_for_preflight", 0)),
