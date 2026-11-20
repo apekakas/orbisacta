@@ -54,3 +54,25 @@ def check_hungarian_language(text):
     if UNTRANSLATED.search(text):
         return False, "untranslated_foreign_term"
     return True, "ok"
+
+
+# Review-only heuristic. A technical term may be legitimate, especially when
+# explained in the summary itself. This is NOT a publish/reject decision.
+READER_JARGON = {
+    "depriváció": re.compile(r"\bdepriváci\w*", re.IGNORECASE),
+    "masztektómia": re.compile(r"\bmasztektómi\w*", re.IGNORECASE),
+    "incidencia": re.compile(r"\bincidenci\w*", re.IGNORECASE),
+    "prevalencia": re.compile(r"\bprevalenci\w*", re.IGNORECASE),
+    "kohorsz": re.compile(r"\bkohorsz\w*", re.IGNORECASE),
+    "kvantilis": re.compile(r"\bkvantilis\w*", re.IGNORECASE),
+    "reálkereset": re.compile(r"\breálkereset\w*", re.IGNORECASE),
+    "szubvenció": re.compile(r"\bszubvenci\w*", re.IGNORECASE),
+    "penetráció": re.compile(r"\bpenetráci\w*", re.IGNORECASE),
+}
+
+
+def jargon_review_terms(text):
+    """Return known potentially confusing expressions, not proof of a mistake."""
+    if not isinstance(text, str):
+        return []
+    return sorted(term for term, pattern in READER_JARGON.items() if pattern.search(text))

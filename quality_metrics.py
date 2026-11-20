@@ -10,6 +10,7 @@ from pathlib import Path
 import json
 
 from editorial_quality import numeric_values
+from hungarian_language import jargon_review_terms
 
 
 def source_date(value):
@@ -44,6 +45,9 @@ def publishable_metrics(articles, country_names, topics, archive, generated_utc,
     publisher_lookup = publisher_lookup or {}
     for row in eligible:
         numbers = numeric_values(row.get("summary_hu") or "", require_unit=True)
+        jargon = jargon_review_terms(
+            (row.get("title_hu") or "") + " " + (row.get("summary_hu") or "")
+        )
         enriched.append({
             "country": row.get("country") or "WORLD",
             "topic": row.get("topic") or "egyéb",
@@ -53,6 +57,9 @@ def publishable_metrics(articles, country_names, topics, archive, generated_utc,
             ),
             "two_numeric_facts": len(numbers) >= 2,
             "has_explainer": bool((row.get("context_text") or "").strip()),
+            "jargon_review_candidate": bool(jargon),
+            "jargon_without_separate_explainer": bool(jargon) and not
+                bool((row.get("context_text") or "").strip()),
             "source_date": source_date(row.get("published_utc")),
         })
 
@@ -64,6 +71,10 @@ def publishable_metrics(articles, country_names, topics, archive, generated_utc,
             "published": count,
             "two_numeric_facts": sum(row["two_numeric_facts"] for row in rows),
             "with_explainer": sum(row["has_explainer"] for row in rows),
+            "readability_review_candidates": sum(row["jargon_review_candidate"] for row in rows),
+            "readability_without_separate_explainer": sum(
+                row["jargon_without_separate_explainer"] for row in rows
+            ),
             "distinct_publishers": len(publishers),
             "largest_publisher_share_pct": (
                 round(100 * max(publishers.values()) / count) if count and publishers else None
@@ -90,6 +101,8 @@ def publishable_metrics(articles, country_names, topics, archive, generated_utc,
             "basis": "published_Hungarian_source_dated_news_only",
             "two_numeric_facts": "two distinct numeric statistical values detected in summary text; NOT independently reverified against original source",
             "with_explainer": "nonempty source-gated explanatory field",
+            "readability_review_candidates": "articles with a known potentially obscure Hungarian term in title/summary; review cue, not proof of poor language",
+            "readability_without_separate_explainer": "of the flagged articles, those without a separate source-gated glossary; an explanation may already appear within the five sentences",
             "distinct_publishers": "distinct editorial publishers after unifying their RSS feeds; not number of RSS feeds",
             "not_included": ["visitor_popularity", "personal_data", "unpublished_stories", "AI_review_errors"],
         },
