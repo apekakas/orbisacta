@@ -1,0 +1,46 @@
+"""Conservative Hungarian copy-editing for editorial summaries.
+
+Only unambiguous glossary corrections and decimal separator typography.
+Never translate source evidence, modify the original URL, or change quantities.
+The editorial source-fact validation still runs on the translated statements.
+"""
+import re
+
+# These are exact, context-safe corrections; not a general machine translator.
+# Keep this list deliberately small and review each addition editorially.
+TERMS = (
+    (r"\btotal mastectom(?:y|ies)\b", "teljes emlőeltávolítás"),
+    (r"\bpartial mastectom(?:y|ies)\b", "részleges emlőeltávolítás"),
+    (r"\bmammákat érintő rák\b", "emlőrák"),
+    (r"\bBelgaország\b", "Belgium"),
+)
+
+# Do not touch years, date notation (2024.11.20), thousands-grouped numbers,
+# versions, URLs or strings containing other dots.
+DECIMAL = re.compile(r"(?<![\d.])(\d{1,3})\.(\d{1,2})(?![\d.])")
+
+# A narrow warning list: terms unambiguously untranslated in Hungarian briefs.
+# Proper names, abbreviations and established English loanwords are not banned.
+UNTRANSLATED = re.compile(
+    r"\b(?:total|partial)\s+mastectom(?:y|ies)\b|"
+    r"\b(?:per\s+100[ ,.]?000\s+women|mammákat érintő rák|Belgaország)\b",
+    flags=re.IGNORECASE,
+)
+
+
+def polish_hungarian(text):
+    """Copy-edit known defects; leave source data and meaning untouched."""
+    if not isinstance(text, str):
+        return text
+    for pattern, replacement in TERMS:
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+    return DECIMAL.sub(r"\1,\2", text)
+
+
+def check_hungarian_language(text):
+    """Flag clearly untranslated phrases, not speculative stylistic issues."""
+    if not isinstance(text, str) or not text.strip():
+        return False, "empty_hungarian_text"
+    if UNTRANSLATED.search(text):
+        return False, "untranslated_foreign_term"
+    return True, "ok"
