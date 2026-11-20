@@ -57,6 +57,8 @@ jobs:
           test -f docs/site-status.json
           test -f docs/quality.json
           test ! -e docs/internal-preview.json
+      - name: Publikációs adatok frissességének ellenőrzése
+        run: python publication_health.py local --folder docs
       - name: GitHub Pages előkészítés
         uses: actions/configure-pages@v5
       - name: Publikálandó oldal feltöltése
@@ -75,6 +77,9 @@ jobs:
       pages: write
       id-token: write
     steps:
+      - uses: actions/checkout@v4
       - name: Publikálás GitHub Pagesre
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Éles publikáció visszaellenőrzése
+        run: python publication_health.py remote --base "${{ steps.deployment.outputs.page_url }}" --retries 4
