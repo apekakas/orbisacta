@@ -43,3 +43,14 @@ def classify(message: str) -> str:
 
 print("Állapotok:", dict(statuses))
 print("AI ellenőrzési hibaokok:", dict(Counter(classify(x[0]) for x in errors)))
+
+# Safe aggregate-only details from the newest run help separate genuinely
+# eligible news from old entries and a queue exhausted during preflight.
+import json
+run_path = db_path.parent / "last_run.json"
+if run_path.exists():
+    report = json.loads(run_path.read_text(encoding="utf-8"))
+    for key in ("intake", "pending_before_ai", "capacity", "ai", "translations"):
+        if key in report:
+            print(f"{key}:", json.dumps(report[key], ensure_ascii=False))
+
