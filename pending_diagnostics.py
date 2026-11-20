@@ -49,6 +49,8 @@ def collect_breakdown(stats):
         "feeds_empty": sum(x.get("status") == "ok" and x.get("read", 0) == 0 for x in stats),
         "entries_read": sum(int(x.get("read", 0)) for x in stats),
         "entries_new": sum(int(x.get("new", 0)) for x in stats),
+        "entries_near_duplicates": sum(int(x.get("near_duplicates", 0)) for x in stats),
+        "entries_duplicate_urls": sum(int(x.get("duplicates", 0)) for x in stats),
         "feed_errors": sum(x.get("status") == "error" for x in stats),
         **aggregate_freshness(stats),
         **aggregate_overlap(stats),
