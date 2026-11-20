@@ -552,7 +552,7 @@ def export_json(con, destination: Path = PUBLISH_PATH):
     rows = con.execute("""SELECT id, country, topic, source_name, author, license, license_url,
           rights_reference_url, title_hu, url, published_utc, summary_hu, context_hu AS context_text, importance FROM articles WHERE status='published'
           AND published_utc >= ? AND published_utc < ?
-          ORDER BY importance DESC, published_utc DESC LIMIT 400""", (cutoff, tomorrow)).fetchall()
+          ORDER BY importance DESC, published_utc DESC LIMIT 1000""", (cutoff, tomorrow)).fetchall()
     payload = {"project": "OrbisActa", "generated_utc": now_utc(),
                "archive": archive,
                "countries": COUNTRIES, "topics": list(TOPICS),
@@ -588,6 +588,8 @@ def export_public_status(report: dict, destination: Path = PUBLIC_STATUS_PATH):
         "feeds_ok": sum(s.get("status") == "ok" for s in collection),
         "ai_configured": bool(os.environ.get("OPENAI_API_KEY")),
         "items_published_in_run": int(ai.get("published", 0)),
+        "ai_attempts_in_run": int(ai.get("processed", 0)),
+        "translations_completed_in_run": int(report.get("translations", {}).get("completed", 0)),
         "live_article_count": int(report.get("exported", 0)),
         "mode": "pilot",
         "daily_target": int(report.get("capacity", {}).get("daily_target", 100)),
