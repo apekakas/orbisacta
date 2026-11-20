@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_source_candidates_are_disabled_until_rights_review():
     sources = load_sources(ROOT / "sources.json")
     candidates = [s for s in sources if s["id"].startswith("candidate-")]
-    assert len(candidates) >= 9
+    assert len(candidates) == 8
     assert all(not s["enabled"] and not s["ai_approved"] for s in candidates)
     assert len({s["publisher"] for s in candidates}) >= 6
     assert len({s["country"] for s in candidates}) >= 6
