@@ -49,7 +49,9 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-4o-mini' }}
           ORBIS_APPROVED_MAX_AI_PER_RUN: "40"
-        run: python orbisacta.py run --limit-per-feed 12 --max-ai 40 --daily-target 100 --max-translations 25
+        # Capture more genuinely fresh entries from active feeds such as GOV.UK.
+        # This changes RSS intake volume, NOT the max 40 paid AI calls/run.
+        run: python orbisacta.py run --limit-per-feed 30 --max-ai 40 --daily-target 100 --max-translations 25
       - name: AI összefoglalások hibadiagnosztikája
         run: python diagnostics.py
       - name: Nem publikus adatfájlok ellenőrzése
