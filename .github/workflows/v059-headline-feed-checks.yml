@@ -1,0 +1,24 @@
+name: OrbisActa v0.5.9 source headline feed
+on:
+  push:
+    branches: [feature/v059-linked-live-headlines]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt "pytest>=8,<10"
+      - name: Headline availability and all existing safeguards
+        run: |
+          python -m compileall -q source_headlines.py orbisacta.py
+          node --check docs/assets/source-headlines.js
+          python -m pytest -q tests/
