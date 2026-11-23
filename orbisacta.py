@@ -737,6 +737,12 @@ def export_json(con, destination: Path = PUBLISH_PATH):
     destination.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     from international import export_languages
     export_languages(con, payload, destination.parent)
+    # A complementary linked headline stream; distinct from five-sentence,
+    # source-evidenced news. Does not invoke a model or change article status.
+    from source_headlines import export_linked_headlines
+    export_linked_headlines(
+        con, load_sources(), archive, destination.parent / "headlines.json"
+    )
     # Public editorial metrics reuse already approved Hungarian summaries.
     # No additional source fetching or AI requests.
     from quality_metrics import export_quality_report
