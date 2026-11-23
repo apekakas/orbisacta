@@ -397,6 +397,15 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
 @media(prefers-reduced-motion:reduce){.feed .story-chevron{transition:none}}
 
 </style>
+<style>
+.source-headlines{margin:1rem 0;padding:0.9rem 1.1rem;border:1px solid var(--line,#d7dce0);border-radius:14px;background:var(--card,#fff)}
+.source-headlines summary{cursor:pointer;font-weight:700}
+.source-headlines p{font-size:.9rem;line-height:1.5;opacity:.85}
+.source-headline-list{list-style:none;padding:0;margin:.6rem 0 0;display:grid;gap:.7rem;max-height:26rem;overflow-y:auto}
+.source-headline-list li{padding:.55rem 0;border-top:1px solid #a5a5a533;overflow-wrap:anywhere}
+.source-headline-list a{text-decoration:underline;text-underline-offset:2px;line-height:1.45}
+.source-headline-meta{display:block;font-size:.78rem;margin-top:.2rem;opacity:.75}
+</style>
 </head>
 <body>
 <header><img class="logoimg" src="./assets/logo-orbisacta.png" alt="OrbisActa"/><div class="header-tools"><small>Nemzetközi hírek · Szerkesztőségi próbarendszer</small><div class="language-picker"><details class="language-menu" id="language">
@@ -474,6 +483,7 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
       </div>
     </details>
   </section>
+  <details id="source-headlines" class="source-headlines" aria-label="Recent external source headlines"></details>
   <section class="feed" id="feed" aria-live="polite"></section>
   <div class="ad-slot" id="ad-in-feed" data-ad-slot="in-feed" hidden aria-hidden="true"></div>
 </main>
@@ -483,6 +493,7 @@ button.chip[aria-pressed=true]{background:#073f43;border-color:#073f43;color:#ff
 <script src="./assets/i18n.js"></script>
 <script src="./assets/globe.js"></script>
 <script src="./assets/quality-dashboard.js"></script>
+<script src="./assets/source-headlines.js" defer></script>
 <script>
 const i18n=window.OrbisI18n;
 const currentLang=i18n.choose(window.ORBIS_PAGE_LANG);
